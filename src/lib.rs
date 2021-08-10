@@ -1,16 +1,21 @@
 // use glib_sys::*;
 use glib::object::ObjectExt;
 use glib::translate::ToGlibPtr;
-use glib::{MainContext, MainLoop};
-use gobject_sys::*;
+use glib::{signal::connect_raw, MainContext, MainLoop};
+use gobject_sys::g_object_set;
 use libc::c_char;
 use libnice_sys::*;
 use std::{ptr, thread};
 
-pub struct IceAgent {}
+pub struct IceAgent {
+    main_ctx: MainContext,
+    inner: *mut NiceAgent,
+}
 
 impl IceAgent {
-    pub fn new() -> Result<Self, String> {
+    pub fn new(main_ctx: MainContext) -> Result<Self, String> {
+        let agent;
+
         unsafe {
             let addr = nice_address_new();
             let result = nice_address_set_from_string(addr, b"127.0.0.1\0".as_ptr() as *const _);
@@ -21,11 +26,10 @@ impl IceAgent {
                 return Err("an error occurred while setting the addr".into());
             }
 
-            let main_ctx = MainContext::new();
             let main_loop = MainLoop::new(Some(&main_ctx), false);
             thread::spawn(move || main_loop.run());
 
-            let agent = nice_agent_new(
+            agent = nice_agent_new(
                 main_ctx.to_glib_full() as *mut _GMainContext,
                 NiceCompatibility_NICE_COMPATIBILITY_RFC5245,
             );
@@ -42,7 +46,7 @@ impl IceAgent {
                 std::ptr::null() as *const libc::c_void,
             );
 
-            glib::signal::connect_raw::<gpointer>(
+            connect_raw::<gpointer>(
                 agent as *mut _,
                 b"candidate-gathering-done\0".as_ptr() as *const _,
                 Some(std::mem::transmute::<_, unsafe extern "C" fn()>(
@@ -50,7 +54,7 @@ impl IceAgent {
                 )),
                 std::ptr::null_mut(),
             );
-            glib::signal::connect_raw::<gpointer>(
+            connect_raw::<gpointer>(
                 agent as *mut _,
                 b"new-selected-pair-full\0".as_ptr() as *const _,
                 Some(std::mem::transmute::<_, unsafe extern "C" fn()>(
@@ -58,7 +62,7 @@ impl IceAgent {
                 )),
                 std::ptr::null_mut(),
             );
-            glib::signal::connect_raw::<gpointer>(
+            connect_raw::<gpointer>(
                 agent as *mut _,
                 b"component-state-changed\0".as_ptr() as *const _,
                 Some(std::mem::transmute::<_, unsafe extern "C" fn()>(
@@ -66,7 +70,7 @@ impl IceAgent {
                 )),
                 std::ptr::null_mut(),
             );
-            glib::signal::connect_raw::<gpointer>(
+            connect_raw::<gpointer>(
                 agent as *mut _,
                 b"new-remote-candidate-full\0".as_ptr() as *const _,
                 Some(std::mem::transmute::<_, unsafe extern "C" fn()>(
@@ -99,7 +103,23 @@ impl IceAgent {
         }
 
         // nice_agent_new();
-        Ok(IceAgent {})
+        Ok(IceAgent {
+            main_ctx,
+            inner: agent,
+        })
+    }
+
+    /// Gets remote creds
+    pub fn get_remote_creds(&self) -> Result<(String, String), String> {
+        todo!()
+    }
+
+    /// Sets remote creds
+    pub fn set_remote_creds(&self) -> Result<(), String> {}
+
+    /// Sends buf to the remote peer
+    pub fn send_msg(&self, buf: &[u8]) -> Result<(), String> {
+        todo!()
     }
 }
 
