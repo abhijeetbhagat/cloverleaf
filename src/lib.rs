@@ -5,16 +5,19 @@ use glib::{signal::connect_raw, MainContext, MainLoop};
 use gobject_sys::g_object_set;
 use libc::c_char;
 use libnice_sys::*;
+use std::ffi::{CStr, CString};
 use std::{ptr, thread};
 
 pub struct IceAgent {
     main_ctx: MainContext,
     inner: *mut NiceAgent,
+    stream_id: u32,
 }
 
 impl IceAgent {
     pub fn new(main_ctx: MainContext) -> Result<Self, String> {
         let agent;
+        let stream_id;
 
         unsafe {
             let addr = nice_address_new();
@@ -85,7 +88,7 @@ impl IceAgent {
                 return Err("couldn't add local addr to agent".into());
             }
 
-            let stream_id = nice_agent_add_stream(agent, 1);
+            stream_id = nice_agent_add_stream(agent, 1);
             let result = nice_agent_gather_candidates(agent, stream_id);
             if result != 0 {
                 println!("candidates gathering succeeded");
@@ -106,16 +109,51 @@ impl IceAgent {
         Ok(IceAgent {
             main_ctx,
             inner: agent,
+            stream_id,
         })
     }
 
     /// Gets remote creds
     pub fn get_remote_creds(&self) -> Result<(String, String), String> {
-        todo!()
+        unsafe {
+            let mut ufrag: *mut gchar = ptr::null_mut();
+            let mut pwd: *mut gchar = ptr::null_mut();
+            nice_agent_get_local_credentials(
+                self.inner,
+                self.stream_id,
+                (&mut ufrag) as *mut *mut _,
+                (&mut pwd) as *mut *mut _,
+            );
+
+            // let ufrag_cstr = CStr::from_ptr(ufrag);
+            // let pwd_cstr = CStr::from_ptr(pwd);
+            let ufrag_len = libc::strlen(ufrag);
+            let pwd_len = libc::strlen(pwd);
+
+            let mut ufrag_vec = Vec::with_capacity(ufrag_len + 1);
+            let mut pwd_vec = Vec::with_capacity(pwd_len + 1);
+            ptr::copy_nonoverlapping(ufrag, ufrag_vec.as_mut_ptr() as *mut _, ufrag_len);
+            ptr::copy_nonoverlapping(pwd, pwd_vec.as_mut_ptr() as *mut _, pwd_len);
+
+            g_free(ufrag as *mut _);
+            g_free(pwd as *mut _);
+
+            ufrag_vec.set_len(ufrag_len + 1);
+            let ufrag = CString::from_vec_unchecked(ufrag_vec)
+                .into_string()
+                .unwrap();
+
+            pwd_vec.set_len(ufrag_len + 1);
+            let pwd = CString::from_vec_unchecked(pwd_vec).into_string().unwrap();
+
+            Ok((ufrag, pwd))
+        }
     }
 
     /// Sets remote creds
-    pub fn set_remote_creds(&self) -> Result<(), String> {}
+    pub fn set_remote_creds(&self) -> Result<(), String> {
+        todo!()
+    }
 
     /// Sends buf to the remote peer
     pub fn send_msg(&self, buf: &[u8]) -> Result<(), String> {
