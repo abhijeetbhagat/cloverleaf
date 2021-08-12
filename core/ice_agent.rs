@@ -113,8 +113,8 @@ impl IceAgent {
         })
     }
 
-    /// Gets remote creds
-    pub fn get_remote_creds(&self) -> Result<(String, String), String> {
+    /// Gets local creds to be sent in the offer sdp
+    pub fn get_local_credentials(&self) -> Result<(String, String), String> {
         unsafe {
             let mut ufrag: *mut gchar = ptr::null_mut();
             let mut pwd: *mut gchar = ptr::null_mut();
@@ -150,9 +150,22 @@ impl IceAgent {
         }
     }
 
-    /// Sets remote creds
-    pub fn set_remote_creds(&self) -> Result<(), String> {
-        todo!()
+    /// Sets remote creds that are extracted from an answer sdp
+    pub fn set_remote_credentials(&self, ufrag: &str, pwd: &str) -> Result<(), String> {
+        let ufrag = CString::new(ufrag).unwrap();
+        let pwd = CString::new(pwd).unwrap();
+
+        unsafe {
+            match nice_agent_set_remote_credentials(
+                self.inner,
+                self.stream_id,
+                ufrag.as_ptr(),
+                pwd.as_ptr(),
+            ) {
+                0 => Err("couldn't set remote creds".into()),
+                _ => Ok(()),
+            }
+        }
     }
 
     /// Sends buf to the remote peer
