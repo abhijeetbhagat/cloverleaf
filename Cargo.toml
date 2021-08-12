@@ -1,13 +1,5 @@
-[package]
-name = "rust-ice-agent"
-version = "0.1.0"
-edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-libnice-sys = "0.1.0"
-libc = "0"
-glib = "0"
-gobject-sys = "0"
-rocket = "0"
+[workspace]
+members = [
+	"core",
+	"api"
+]
