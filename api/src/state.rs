@@ -1,9 +1,9 @@
-use crate::request::Payload;
+use crate::payload::Payload;
 use core::IceAgent;
 use glib::MainContext;
 use rocket::serde::{json::Json, Deserialize, Serialize};
 
-pub(crate) struct CloverLeafState {
+pub struct CloverLeafState {
     agent: IceAgent,
 }
 
@@ -17,8 +17,8 @@ impl CloverLeafState {
         Ok(Self { agent })
     }
 
-    pub fn handle(payload: Json<Payload>) {
-        match payload.pt {
+    pub fn handle(&self, payload: Json<Payload>) {
+        match &payload.pt {
             Offer => {}
             Answer => {
                 println!("we recvd an answer: {}", payload.payload);
@@ -26,7 +26,7 @@ impl CloverLeafState {
         }
     }
 
-    pub fn get_credentials(&self) -> Result<(String, String)> {
+    pub fn get_credentials(&self) -> Result<(String, String), String> {
         self.agent.get_local_credentials()
     }
 }

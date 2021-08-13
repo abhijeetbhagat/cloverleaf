@@ -1,6 +1,6 @@
 pub struct Sdp {
-    ufrag: String,
-    pwd: String,
+    pub ufrag: String,
+    pub pwd: String,
 }
 
 pub fn create_sdp(sdp: &Sdp) -> String {

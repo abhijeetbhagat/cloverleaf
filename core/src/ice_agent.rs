@@ -14,6 +14,9 @@ pub struct IceAgent {
     stream_id: u32,
 }
 
+unsafe impl Send for IceAgent {}
+unsafe impl Sync for IceAgent {}
+
 impl IceAgent {
     pub fn new(main_ctx: MainContext) -> Result<Self, String> {
         let agent;
