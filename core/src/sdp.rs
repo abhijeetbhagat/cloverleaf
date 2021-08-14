@@ -1,6 +1,74 @@
+use crate::{candidate_type::CandidateType, ice_candidate::IceCandidate};
+use regex::Regex;
+
 pub struct Sdp {
     pub ufrag: String,
     pub pwd: String,
+}
+
+impl Default for Sdp {
+    fn default() -> Self {
+        Sdp {
+            ufrag: "".into(),
+            pwd: "".into(),
+        }
+    }
+}
+
+impl From<&str> for Sdp {
+    fn from(raw: &str) -> Self {
+        let mut sdp = Sdp::default();
+        for line in raw.split("\r\n") {
+            if line.contains("ice-ufrag") {
+                // a=ice-pwd:99ad05513f44705637769b05c7e86c0b
+                //    a=ice-ufrag:ae11196c
+                let re = Regex::new(r"a=ice-ufrag:([a-z0-9]+)").unwrap();
+                let caps = re.captures(line).unwrap();
+                sdp.ufrag = caps.get(1).unwrap().as_str().into();
+                continue;
+            }
+            if line.contains("ice-pwd") {
+                let re = Regex::new(r"a=ice-pwd:([a-z0-9]+)").unwrap();
+                let caps = re.captures(line).unwrap();
+                sdp.pwd = caps.get(1).unwrap().as_str().into();
+                continue;
+            }
+            if line.contains("candidate") {
+                parse_candidate(line);
+            }
+        }
+        sdp
+    }
+}
+
+pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
+    // candidate:0 1 UDP 2122187007 9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local 48155 typ host
+    // candidate:2 1 UDP 2122252543 475400ac-4273-4245-90fb-7b6c97fe06f7.local 53547 typ host
+    // candidate:4 1 TCP 2105458943 9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local 9 typ host tcptype active
+    // candidate:5 1 TCP 2105524479 475400ac-4273-4245-90fb-7b6c97fe06f7.local 9 typ host tcptype active
+    // candidate:1 1 UDP 1685987327 103.208.69.28 19828 typ srflx raddr 0.0.0.0 rport 0
+    //
+    // int res = sscanf(candidate, "%32s %30u %3s %30u %49s %30u typ %5s %*s %39s %*s %30u",
+    let re = Regex::new(r"candidate:([0-9]+)\s(0-9)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s([a-z]+)\s([a-z]+)\s([a-z0-9\.]+)").unwrap();
+    let caps = re.captures(line).unwrap();
+    let foundation = caps.get(0).ok_or_else("".into())?;
+    let stream = caps.get(1).ok_or_else("".into())?;
+    let transport = caps.get(2).ok_or_else("".into())?;
+    let priority = caps.get(3).ok_or_else("".into())?;
+    let ip = caps.get(4).ok_or_else("".into())?;
+    let port = caps.get(5).ok_or_else("".into())?;
+    let typ = caps.get(6).ok_or_else("".into())?;
+
+    let typ = match typ.as_str() {
+        "host" if transport.as_str() == "UDP" => CandidateType::HostUdp,
+        "host" if transport.as_str() == "TCP" => {
+        CandidateType::
+        }
+        "srflx" => {}
+        _ => {}
+    }
+
+    IceCandidate::new(foundation)
 }
 
 pub fn create_sdp(sdp: &Sdp) -> String {

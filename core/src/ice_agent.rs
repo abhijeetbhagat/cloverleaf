@@ -8,6 +8,9 @@ use libnice_sys::*;
 use std::ffi::{CStr, CString};
 use std::{ptr, thread};
 
+use crate::ice_candidate::IceCandidate;
+
+/// an ICE agent
 pub struct IceAgent {
     main_ctx: MainContext,
     inner: *mut NiceAgent,
@@ -18,6 +21,7 @@ unsafe impl Send for IceAgent {}
 unsafe impl Sync for IceAgent {}
 
 impl IceAgent {
+    /// creates a new `IceAgent` with the given `MainContext`
     pub fn new(main_ctx: MainContext) -> Result<Self, String> {
         let agent;
         let stream_id;
@@ -116,7 +120,7 @@ impl IceAgent {
         })
     }
 
-    /// Gets local creds to be sent in the offer sdp
+    /// gets local creds to be sent in the offer sdp
     pub fn get_local_credentials(&self) -> Result<(String, String), String> {
         unsafe {
             let mut ufrag: *mut gchar = ptr::null_mut();
@@ -153,7 +157,7 @@ impl IceAgent {
         }
     }
 
-    /// Sets remote creds that are extracted from an answer sdp
+    /// sets remote creds that are extracted from an answer sdp
     pub fn set_remote_credentials(&self, ufrag: &str, pwd: &str) -> Result<(), String> {
         let ufrag = CString::new(ufrag).unwrap();
         let pwd = CString::new(pwd).unwrap();
@@ -171,7 +175,10 @@ impl IceAgent {
         }
     }
 
-    /// Sends buf to the remote peer
+    /// adds a remote candidate
+    pub fn set_remote_candidate(&mut self, candidate: IceCandidate) {}
+
+    /// sends buf to the remote peer
     pub fn send_msg(&self, buf: &[u8]) -> Result<(), String> {
         todo!()
     }

@@ -1,5 +1,5 @@
 use crate::payload::Payload;
-use core::IceAgent;
+use core::{sdp::Sdp, IceAgent};
 use glib::MainContext;
 use rocket::serde::{json::Json, Deserialize, Serialize};
 
@@ -22,6 +22,8 @@ impl CloverLeafState {
             Offer => {}
             Answer => {
                 println!("we recvd an answer: {}", payload.payload);
+                let sdp = Sdp::from(payload.payload.as_str());
+                self.agent.set_remote_credentials(&sdp.ufrag, &sdp.pwd);
             }
         }
     }
