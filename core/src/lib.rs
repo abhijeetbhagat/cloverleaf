@@ -5,3 +5,4 @@ pub mod sdp;
 mod transport;
 
 pub use ice_agent::IceAgent;
+pub use ice_candidate::IceCandidate;
