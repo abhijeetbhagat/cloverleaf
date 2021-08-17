@@ -1,5 +1,6 @@
 use core::sdp::parse_candidate;
 use core::sdp::Sdp;
+use core::CandidateType;
 
 #[test]
 fn test_sdp_parsing() {
@@ -15,4 +16,13 @@ fn test_candidate_parsing() {
         "candidate:0 1 UDP 2122187007 9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local 48155 typ host";
     let candidate = parse_candidate(text);
     assert!(candidate.is_ok());
+
+    let text = "candidate:4 1 TCP 2105458943 9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local 9 typ host tcptype active";
+    let candidate = parse_candidate(text);
+    assert!(candidate.is_ok());
+    let candidate = candidate.unwrap();
+    assert_eq!(
+        candidate.typ,
+        CandidateType::HostTcp("9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local".into())
+    );
 }

@@ -7,15 +7,16 @@ use std::ptr::NonNull;
 
 use crate::{candidate_type::CandidateType, transport::Transport};
 
+#[derive(Debug)]
 pub struct IceCandidate {
     inner: NonNull<NiceCandidate>,
-    foundation: u8,
-    component: u8,
-    transport: Transport,
-    priority: u32,
-    ip: String,
-    port: u16,
-    typ: CandidateType,
+    pub foundation: u8,
+    pub component: u8,
+    pub transport: Transport,
+    pub priority: u32,
+    pub ip: String,
+    pub port: u16,
+    pub typ: CandidateType,
 }
 
 impl IceCandidate {

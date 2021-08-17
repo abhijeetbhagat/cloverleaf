@@ -49,28 +49,29 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
     // candidate:1 1 UDP 1685987327 103.208.69.28 19828 typ srflx raddr 0.0.0.0 rport 0
     //
     // int res = sscanf(candidate, "%32s %30u %3s %30u %49s %30u typ %5s %*s %39s %*s %30u",
-    let re = Regex::new(r"candidate:([0-9]+)\s([0-9]+)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s(raddr|tcptype)\s([a-z]+|[0-9\.]+)\s(rport)\s([0-9]+)").unwrap();
+    // let re = Regex::new(r"candidate:([0-9]+)\s([0-9]+)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s(raddr|tcptype)\s([a-z]+|[0-9\.]+)\s(rport)\s([0-9]+)").unwrap();
+    let re = Regex::new(r"candidate:([0-9]+)\s([0-9]+)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s*(raddr|tcptype)*\s*([a-z]+|[0-9\.]+)*\s*(rport)*\s*([0-9]+)*").unwrap();
     let caps = re.captures(line).unwrap();
     let foundation = caps
-        .get(0)
+        .get(1)
         .ok_or::<String>("can't parse foundation".into())?;
     let component = caps
-        .get(1)
+        .get(2)
         .ok_or::<String>("can't parse component".into())?;
     let transport = caps
-        .get(2)
+        .get(3)
         .ok_or::<String>("can't parse transport".into())?;
-    let priority = caps.get(3).ok_or::<String>("can't parse priority".into())?;
-    let ip = caps.get(4).ok_or::<String>("can't parse ip".into())?;
-    let port = caps.get(5).ok_or::<String>("can't parse port".into())?;
-    let typ = caps.get(6).ok_or::<String>("can't parse typ".into())?;
+    let priority = caps.get(4).ok_or::<String>("can't parse priority".into())?;
+    let ip = caps.get(5).ok_or::<String>("can't parse ip".into())?;
+    let port = caps.get(6).ok_or::<String>("can't parse port".into())?;
+    let typ = caps.get(7).ok_or::<String>("can't parse typ".into())?;
 
     let typ = match typ.as_str() {
         "host" if transport.as_str() == "UDP" => CandidateType::HostUdp,
         "host" if transport.as_str() == "TCP" => CandidateType::HostTcp(ip.as_str().into()),
         "srflx" => {
-            let rip = caps.get(7).ok_or::<String>("can't parse rip".into())?;
-            let rport = caps.get(9).ok_or::<String>("can't parse rport".into())?;
+            let rip = caps.get(8).ok_or::<String>("can't parse rip".into())?;
+            let rport = caps.get(10).ok_or::<String>("can't parse rport".into())?;
             CandidateType::ServerReflexive(rip.as_str().into(), rport.as_str().parse().unwrap())
         }
         _ => return Err(format!("unknown type: {}", typ.as_str())),
