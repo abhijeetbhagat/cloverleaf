@@ -49,7 +49,7 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
     // candidate:1 1 UDP 1685987327 103.208.69.28 19828 typ srflx raddr 0.0.0.0 rport 0
     //
     // int res = sscanf(candidate, "%32s %30u %3s %30u %49s %30u typ %5s %*s %39s %*s %30u",
-    let re = Regex::new(r"candidate:([0-9]+)\s(0-9)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s(raddr|tcptype)\s([a-z]+|[0-9\.]+)\s(rport)\s([0-9]+)").unwrap();
+    let re = Regex::new(r"candidate:([0-9]+)\s([0-9]+)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s(raddr|tcptype)\s([a-z]+|[0-9\.]+)\s(rport)\s([0-9]+)").unwrap();
     let caps = re.captures(line).unwrap();
     let foundation = caps
         .get(0)
