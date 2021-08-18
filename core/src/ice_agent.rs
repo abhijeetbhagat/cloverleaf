@@ -6,6 +6,7 @@ use gobject_sys::g_object_set;
 use libc::c_char;
 use libnice_sys::*;
 use std::ffi::{CStr, CString};
+use std::ptr::NonNull;
 use std::{ptr, thread};
 
 use crate::ice_candidate::IceCandidate;
@@ -13,7 +14,7 @@ use crate::ice_candidate::IceCandidate;
 /// an ICE agent
 pub struct IceAgent {
     main_ctx: MainContext,
-    inner: *mut NiceAgent,
+    inner: NonNull<NiceAgent>,
     stream_id: u32,
 }
 
@@ -39,25 +40,27 @@ impl IceAgent {
             let main_loop = MainLoop::new(Some(&main_ctx), false);
             thread::spawn(move || main_loop.run());
 
-            agent = nice_agent_new(
+            agent = NonNull::new(nice_agent_new(
                 main_ctx.to_glib_full() as *mut _GMainContext,
                 NiceCompatibility_NICE_COMPATIBILITY_RFC5245,
-            );
+            ))
+            .ok_or::<String>("agent creation failed".into())?;
+
             gobject_sys::g_object_set(
-                agent as *mut _,
+                agent.as_ptr() as *mut _,
                 b"upnp\0".as_ptr() as *const _,
                 0,
                 std::ptr::null() as *const libc::c_void,
             );
             gobject_sys::g_object_set(
-                agent as *mut _,
+                agent.as_ptr() as *mut _,
                 b"controlling-mode\0".as_ptr() as *const _,
                 0,
                 std::ptr::null() as *const libc::c_void,
             );
 
             connect_raw::<gpointer>(
-                agent as *mut _,
+                agent.as_ptr() as *mut _,
                 b"candidate-gathering-done\0".as_ptr() as *const _,
                 Some(std::mem::transmute::<_, unsafe extern "C" fn()>(
                     candidate_gathering_done as *const (),
@@ -65,7 +68,7 @@ impl IceAgent {
                 std::ptr::null_mut(),
             );
             connect_raw::<gpointer>(
-                agent as *mut _,
+                agent.as_ptr() as *mut _,
                 b"new-selected-pair-full\0".as_ptr() as *const _,
                 Some(std::mem::transmute::<_, unsafe extern "C" fn()>(
                     new_selected_pair as *const (),
@@ -73,7 +76,7 @@ impl IceAgent {
                 std::ptr::null_mut(),
             );
             connect_raw::<gpointer>(
-                agent as *mut _,
+                agent.as_ptr() as *mut _,
                 b"component-state-changed\0".as_ptr() as *const _,
                 Some(std::mem::transmute::<_, unsafe extern "C" fn()>(
                     component_state_changed as *const (),
@@ -81,29 +84,29 @@ impl IceAgent {
                 std::ptr::null_mut(),
             );
             connect_raw::<gpointer>(
-                agent as *mut _,
+                agent.as_ptr() as *mut _,
                 b"new-remote-candidate-full\0".as_ptr() as *const _,
                 Some(std::mem::transmute::<_, unsafe extern "C" fn()>(
                     new_remote_candidate as *const (),
                 )),
                 std::ptr::null_mut(),
             );
-            let ret = nice_agent_add_local_address(agent, addr);
+            let ret = nice_agent_add_local_address(agent.as_ptr(), addr);
             if ret != 0 {
                 println!("added local addr to agent");
             } else {
                 return Err("couldn't add local addr to agent".into());
             }
 
-            stream_id = nice_agent_add_stream(agent, 1);
-            let result = nice_agent_gather_candidates(agent, stream_id);
+            stream_id = nice_agent_add_stream(agent.as_ptr(), 1);
+            let result = nice_agent_gather_candidates(agent.as_ptr(), stream_id);
             if result != 0 {
                 println!("candidates gathering succeeded");
             } else {
                 return Err("couldnt gather candidates".into());
             }
             nice_agent_attach_recv(
-                agent,
+                agent.as_ptr(),
                 stream_id,
                 1,
                 main_ctx.to_glib_full() as *mut _GMainContext,
@@ -126,7 +129,7 @@ impl IceAgent {
             let mut ufrag: *mut gchar = ptr::null_mut();
             let mut pwd: *mut gchar = ptr::null_mut();
             nice_agent_get_local_credentials(
-                self.inner,
+                self.inner.as_ptr(),
                 self.stream_id,
                 (&mut ufrag) as *mut *mut _,
                 (&mut pwd) as *mut *mut _,
@@ -164,7 +167,7 @@ impl IceAgent {
 
         unsafe {
             match nice_agent_set_remote_credentials(
-                self.inner,
+                self.inner.as_ptr(),
                 self.stream_id,
                 ufrag.as_ptr(),
                 pwd.as_ptr(),
@@ -181,6 +184,14 @@ impl IceAgent {
     /// sends buf to the remote peer
     pub fn send_msg(&self, buf: &[u8]) -> Result<(), String> {
         todo!()
+    }
+}
+
+impl Drop for IceAgent {
+    fn drop(&mut self) {
+        unsafe {
+            gobject_sys::g_object_unref(self.inner.as_ptr() as *mut _);
+        }
     }
 }
 
