@@ -70,8 +70,8 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
         "host" if transport.as_str() == "UDP" => CandidateType::HostUdp,
         "host" if transport.as_str() == "TCP" => CandidateType::HostTcp(ip.as_str().into()),
         "srflx" => {
-            let rip = caps.get(8).ok_or::<String>("can't parse rip".into())?;
-            let rport = caps.get(10).ok_or::<String>("can't parse rport".into())?;
+            let rip = caps.get(9).ok_or::<String>("can't parse rip".into())?;
+            let rport = caps.get(11).ok_or::<String>("can't parse rport".into())?;
             CandidateType::ServerReflexive(rip.as_str().into(), rport.as_str().parse().unwrap())
         }
         _ => return Err(format!("unknown type: {}", typ.as_str())),

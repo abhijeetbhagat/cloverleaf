@@ -25,4 +25,13 @@ fn test_candidate_parsing() {
         candidate.typ,
         CandidateType::HostTcp("9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local".into())
     );
+
+    let text = "candidate:1 1 UDP 1685987327 103.208.69.28 19828 typ srflx raddr 0.0.0.0 rport 0";
+    let candidate = parse_candidate(text);
+    assert!(candidate.is_ok());
+    let candidate = candidate.unwrap();
+    assert_eq!(
+        candidate.typ,
+        CandidateType::ServerReflexive("0.0.0.0".into(), "0".parse().unwrap())
+    );
 }
