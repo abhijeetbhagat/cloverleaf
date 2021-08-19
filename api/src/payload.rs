@@ -5,6 +5,7 @@ use rocket::serde::{Deserialize, Serialize};
 pub enum PayloadType {
     Offer,
     Answer,
+    Candidate,
 }
 
 #[derive(Deserialize, Serialize)]
