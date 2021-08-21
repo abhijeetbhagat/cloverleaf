@@ -25,3 +25,8 @@ pub fn initiate(state: &State<CloverLeafState>) -> status::Custom<content::Json<
 pub fn recv_answer(state: &State<CloverLeafState>, payload: Json<Payload>) {
     state.handle(payload);
 }
+
+#[post("/candidate", data = "<payload>")]
+pub fn recv_candidate(state: &State<CloverLeafState>, payload: Json<Payload>) {
+    state.handle(payload);
+}
