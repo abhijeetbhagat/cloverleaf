@@ -15,7 +15,6 @@ callButton.disabled = true;
 hangupButton.disabled = true;
 startButton.addEventListener('click', start);
 
-const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 
 let localstream;
@@ -35,12 +34,14 @@ async function start() {
 
 async function sendAnswer(offer) {
 	peer = new RTCPeerConnection({});
+	peer.addEventListener("icecandidate", e => onIceCandidate(peer, e));
+	peer.addEventListener("iceconnectionstatechange", e => onIceStateChange(peer, e));
+	peer.addEventListener("track", gotRemoteStream);
+
 	await peer.setRemoteDescription(offer);
 
 	const answer = await peer.createAnswer();
 	await peer.setLocalDescription(answer);
-
-	// TODO abhi: send this answer to remote peer via the /answer api
 
 	const response = await fetch("http://localhost:8002/answer", {
 		method: 'POST',
@@ -51,4 +52,21 @@ async function sendAnswer(offer) {
 	});
 	const apiResponse = await response.json();
 	console.log(`api response is ${apiResponse}`);
+}
+
+async function gotRemoteStream(e) {
+	remoteVideo.srcObject = e.streams[0];
+}
+
+async function onIceCandidate(peer, e) {
+	try {
+		await peer.addIceCandidate(event.candidate);
+		console.log("candidate added");
+	} catch (e) {
+		console.log("error setting ice candidate");
+	}
+}
+
+async function onIceStateChange(peer, e) {
+	console.log("ice state changed");
 }
