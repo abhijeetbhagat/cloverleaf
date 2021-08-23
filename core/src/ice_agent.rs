@@ -135,28 +135,14 @@ impl IceAgent {
                 (&mut pwd) as *mut *mut _,
             );
 
-            // let ufrag_cstr = CStr::from_ptr(ufrag);
-            // let pwd_cstr = CStr::from_ptr(pwd);
-            let ufrag_len = libc::strlen(ufrag);
-            let pwd_len = libc::strlen(pwd);
-
-            let mut ufrag_vec = Vec::with_capacity(ufrag_len + 1);
-            let mut pwd_vec = Vec::with_capacity(pwd_len + 1);
-            ptr::copy_nonoverlapping(ufrag, ufrag_vec.as_mut_ptr() as *mut _, ufrag_len);
-            ptr::copy_nonoverlapping(pwd, pwd_vec.as_mut_ptr() as *mut _, pwd_len);
+            // https://stackoverflow.com/questions/24145823/how-do-i-convert-a-c-string-into-a-rust-string-and-back-via-ffi
+            let ufrag_string = CStr::from_ptr(ufrag).to_str().unwrap().to_owned();
+            let pwd_string = CStr::from_ptr(pwd).to_str().unwrap().to_owned();
 
             g_free(ufrag as *mut _);
             g_free(pwd as *mut _);
 
-            ufrag_vec.set_len(ufrag_len + 1);
-            let ufrag = CString::from_vec_unchecked(ufrag_vec)
-                .into_string()
-                .unwrap();
-
-            pwd_vec.set_len(ufrag_len + 1);
-            let pwd = CString::from_vec_unchecked(pwd_vec).into_string().unwrap();
-
-            Ok((ufrag, pwd))
+            Ok((ufrag_string, pwd_string))
         }
     }
 
