@@ -24,7 +24,7 @@ async function start() {
 	console.log('Requesting local stream');
 	startButton.disabled = true;
 	try {
-		const response = await fetch("http://localhost:8002/");
+		const response = await fetch("http://localhost:8888/");
 		const offer = await response.json();
 		console.log(`got offer ${offer}`);
 	} catch (e) {
@@ -43,7 +43,7 @@ async function sendAnswer(offer) {
 	const answer = await peer.createAnswer();
 	await peer.setLocalDescription(answer);
 
-	const response = await fetch("http://localhost:8002/answer", {
+	const response = await fetch("http://localhost:8888/answer", {
 		method: 'POST',
 		body: {"type": "answer", "sdp": answer},
 		headers: {

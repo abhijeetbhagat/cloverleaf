@@ -5,8 +5,6 @@ use api::state::CloverLeafState;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Header;
 use rocket::{Request, Response};
-use std::future::Future;
-use std::pin::Pin;
 
 pub struct CORS;
 
