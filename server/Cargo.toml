@@ -8,5 +8,5 @@ edition = "2018"
 [dependencies]
 rocket = { version = "0.5.0-rc.1", features=["json"] }
 cloverleaf_core = { path = "../cloverleaf_core" }
-api = { path = "../api" }
+cloverleaf_api = { path = "../cloverleaf_api" }
 glib = "0"

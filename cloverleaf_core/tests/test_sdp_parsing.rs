@@ -1,6 +1,6 @@
-use core::sdp::parse_candidate;
-use core::sdp::Sdp;
-use core::CandidateType;
+use cloverleaf_core::sdp::parse_candidate;
+use cloverleaf_core::sdp::Sdp;
+use cloverleaf_core::CandidateType;
 
 #[test]
 fn test_sdp_parsing() {

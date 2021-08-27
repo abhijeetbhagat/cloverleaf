@@ -1,4 +1,4 @@
-use core::IceAgent;
+use cloverleaf_core::IceAgent;
 use glib::MainContext;
 
 #[test]

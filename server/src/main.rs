@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
-use api::connect::{initiate, recv_answer};
-use api::state::CloverLeafState;
+use cloverleaf_api::connect::{initiate, recv_answer};
+use cloverleaf_api::state::CloverLeafState;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Header;
 use rocket::{Request, Response};
