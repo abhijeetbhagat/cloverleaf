@@ -1,6 +1,7 @@
 [workspace]
 members = [
-	"cloverleaf_core",
 	"cloverleaf_api",
+	"cloverleaf_core",
+	"cloverleaf_rtsp",
 	"server"
 ]

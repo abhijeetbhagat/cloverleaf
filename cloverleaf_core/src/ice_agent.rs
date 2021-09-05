@@ -16,6 +16,7 @@ pub struct IceAgent {
     main_ctx: MainContext,
     inner: NonNull<NiceAgent>,
     stream_id: u32,
+    component_id: u32,
 }
 
 unsafe impl Send for IceAgent {}
@@ -115,11 +116,12 @@ impl IceAgent {
             );
         }
 
-        // nice_agent_new();
         Ok(IceAgent {
             main_ctx,
             inner: agent,
             stream_id,
+            // 1 is rtp, 2 is rtcp
+            component_id: 1,
         })
     }
 
@@ -168,8 +170,17 @@ impl IceAgent {
     pub fn set_remote_candidate(&mut self, candidate: IceCandidate) {}
 
     /// sends buf to the remote peer
-    pub fn send_msg(&self, buf: &[u8]) -> Result<(), String> {
-        todo!()
+    pub fn send_msg(&mut self, buf: &[u8]) -> Result<(), String> {
+        unsafe {
+            nice_agent_send(
+                self.inner.as_ptr(),
+                self.stream_id,
+                self.component_id,
+                buf.len() as u32,
+                buf.as_ptr() as *const _,
+            );
+        }
+        Ok(())
     }
 }
 

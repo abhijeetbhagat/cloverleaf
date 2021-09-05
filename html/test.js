@@ -62,6 +62,12 @@ async function onIceCandidate(peer, e) {
 	try {
 		await peer.addIceCandidate(event.candidate);
 		console.log("candidate added");
+		const response = await fetch("http://localhost:8888/answer", {
+		method: 'POST',
+		body: {"type": "answer", "sdp": answer},
+		headers: {
+			"Content-Type": "application/json"
+		});
 	} catch (e) {
 		console.log("error setting ice candidate");
 	}
