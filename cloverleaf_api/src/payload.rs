@@ -6,6 +6,7 @@ pub enum PayloadType {
     Offer,
     Answer,
     Candidate,
+    Watch,
 }
 
 #[derive(Deserialize, Serialize)]
