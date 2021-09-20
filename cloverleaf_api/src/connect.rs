@@ -6,8 +6,12 @@ use rocket::response::{content, status};
 use rocket::serde::json::Json;
 use rocket::State;
 
-#[get("/")]
-pub fn initiate(state: &State<CloverLeafState>) -> status::Custom<content::Json<String>> {
+#[post("/", data = "<payload>")]
+pub fn initiate(
+    state: &State<CloverLeafState>,
+    payload: Json<Payload>,
+) -> status::Custom<content::Json<String>> {
+    state.handle(payload);
     if let Ok((ufrag, pwd)) = state.get_credentials() {
         let sdp = Sdp { ufrag, pwd };
         let sdp = create_sdp(&sdp);
