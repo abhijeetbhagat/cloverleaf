@@ -34,7 +34,7 @@ impl From<&str> for Sdp {
                 continue;
             }
             if line.contains("candidate") {
-                parse_candidate(line);
+                parse_candidate(line).unwrap();
             }
         }
         sdp
