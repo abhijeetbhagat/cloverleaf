@@ -14,4 +14,6 @@ pub enum PayloadType {
 pub struct Payload {
     pub pt: PayloadType,
     pub payload: String,
+    pub id: String,
+    pub session: String,
 }
