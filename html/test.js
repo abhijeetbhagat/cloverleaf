@@ -19,63 +19,68 @@ const remoteVideo = document.getElementById('remoteVideo');
 
 let localstream;
 let peer;
+let session;
 
 async function start() {
-	startButton.disabled = true;
-	try {
-		const response = await fetch("http://localhost:8888/");
-		const offer = await response.json();
-		console.log(`got offer ${offer.sdp}`);
-		await sendAnswer(offer);
-	} catch (e) {
-		console.error(e);
-	}
+    startButton.disabled = true;
+    try {
+	const response = await fetch("http://localhost:8888/");
+	const offer = await response.json();
+	session = offer.session;
+	console.log(`got offer ${offer.sdp}`);
+	await sendAnswer(offer);
+    } catch (e) {
+	console.error(e);
+    }
 }
 
 async function sendAnswer(offer) {
-	peer = new RTCPeerConnection({});
-	peer.addEventListener("icecandidate", e => onIceCandidate(peer, e));
-	peer.addEventListener("iceconnectionstatechange", e => onIceStateChange(peer, e));
-	peer.addEventListener("track", gotRemoteStream);
+    peer = new RTCPeerConnection({});
+    peer.addEventListener("icecandidate", e => onIceCandidate(peer, e));
+    peer.addEventListener("iceconnectionstatechange", e => onIceStateChange(peer, e));
+    peer.addEventListener("track", gotRemoteStream);
 
-	// even though the offer JSON object has user-defined fields along with the remote sdp,
-	// setRemoteDescription will correctly extract the sdp
-	await peer.setRemoteDescription(offer);
+    // even though the offer JSON object has user-defined fields along with the remote sdp,
+    // setRemoteDescription will correctly extract the sdp
+    await peer.setRemoteDescription(offer);
 
-	const answer = await peer.createAnswer();
-	await peer.setLocalDescription(answer);
-	console.log(`going to send this answer: ${JSON.stringify(answer)}`);
+    const answer = await peer.createAnswer();
+    await peer.setLocalDescription(answer);
+    console.log(`going to send this answer: ${JSON.stringify(answer)}`);
 
-	const response = await fetch("http://localhost:8888/answer", {
-		method: 'POST',
-		body: JSON.stringify({"pt": "Answer", "payload": JSON.stringify(answer), "id": "", "session": offer.session }),
-		headers: {
-			"Content-Type": "application/json"
-		}
-	});
-	const apiResponse = await response.json();
-	console.log(`api response is ${apiResponse}`);
+    const response = await fetch("http://localhost:8888/answer", {
+	method: 'POST',
+	body: JSON.stringify({ "pt": "Answer", "payload": JSON.stringify(answer), "id": "", "session": offer.session }),
+	headers: {
+	    "Content-Type": "application/json"
+	}
+    });
+    const apiResponse = await response.json();
+    console.log(`api response is ${apiResponse}`);
 }
 
 async function gotRemoteStream(e) {
-	remoteVideo.srcObject = e.streams[0];
+    remoteVideo.srcObject = e.streams[0];
 }
 
-async function onIceCandidate(peer, e) {
-	try {
-		await peer.addIceCandidate(event.candidate);
-		console.log("candidate added");
-		const response = await fetch("http://localhost:8888/candidate", {
-		method: 'POST',
-		body: {"type": "candidate", "candidate": event.candidate},
-		headers: {
-			"Content-Type": "application/json"
-		}});
-	} catch (e) {
-		console.log("error setting ice candidate");
-	}
+async function onIceCandidate(peer, event) {
+    try {
+	await peer.addIceCandidate(event.candidate);
+	console.log(`candidate added: ${event.candidate}`);
+	const response = await fetch("http://localhost:8888/candidate", {
+	    method: 'POST',
+	    body: JSON.stringify({ "pt": "Candidate", "payload": event.candidate, "id": "", "session": session }),
+	    headers: {
+		"Content-Type": "application/json"
+	    }});
+
+	const apiResponse = await response.json();
+	console.log(`api response is ${apiResponse}`);
+    } catch (e) {
+	console.log("error setting ice candidate");
+    }
 }
 
 async function onIceStateChange(peer, e) {
-	console.log("ice state changed");
+    console.log("ice state changed");
 }
