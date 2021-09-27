@@ -7,6 +7,7 @@ edition = "2018"
 
 [dependencies]
 rocket = { version = "0.5.0-rc.1", features=["json"] }
+rocket_cors = { git = "https://github.com/lawliet89/rocket_cors", branch = "master" }
 cloverleaf_core = { path = "../cloverleaf_core" }
 cloverleaf_api = { path = "../cloverleaf_api" }
 glib = "0"
