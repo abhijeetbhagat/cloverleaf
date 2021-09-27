@@ -26,8 +26,9 @@ async function start() {
 		const response = await fetch("http://localhost:8888/");
 		const offer = await response.json();
 		console.log(`got offer ${offer}`);
+		await sendAnswer(offer);
 	} catch (e) {
-		alert(`getUserMedia() error: ${e.name}`);
+		alert(`start() error: ${e.name}`);
 	}
 }
 
@@ -41,10 +42,11 @@ async function sendAnswer(offer) {
 
 	const answer = await peer.createAnswer();
 	await peer.setLocalDescription(answer);
+	console.log(`going to send this answer: ${JSON.stringify(answer)}`);
 
 	const response = await fetch("http://localhost:8888/answer", {
 		method: 'POST',
-		body: {"type": "answer", "sdp": answer},
+		body: {"type": "answer", "sdp": JSON.stringify(answer)},
 		headers: {
 			"Content-Type": "application/json"
 		}
