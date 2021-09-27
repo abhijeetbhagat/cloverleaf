@@ -6,31 +6,40 @@ use rocket::response::{content, status};
 use rocket::serde::json::Json;
 use rocket::State;
 
-#[post("/", data = "<payload>")]
-pub fn initiate(
-    state: &State<CloverLeafState>,
-    payload: Json<Payload>,
-) -> status::Custom<content::Json<String>> {
-    state.handle(payload);
-    if let Ok((ufrag, pwd)) = state.get_credentials() {
-        let sdp = Sdp { ufrag, pwd };
-        let sdp = create_sdp(&sdp);
-        let offer = format!("{{\"type\": \"offer\", \"sdp\": \"{}\"}}", sdp);
+#[get("/")]
+pub async fn initiate(state: &State<CloverLeafState>) -> status::Custom<content::Json<String>> {
+    if let Ok((session, sdp)) = state.create_session() {
+        let offer = format!(
+            "{{\"type\": \"offer\", \"session\": \"{}\", \"sdp\": \"{}\"}}",
+            session, sdp
+        );
         return status::Custom(Status::Accepted, content::Json(offer));
+    } else {
+        status::Custom(
+            Status::Accepted,
+            content::Json("{{\"type\": \"error\"}}".into()),
+        )
     }
-
-    status::Custom(
-        Status::Accepted,
-        content::Json("{{\"type\": \"error\"}}".into()),
-    )
 }
 
 #[post("/answer", data = "<payload>")]
-pub fn recv_answer(state: &State<CloverLeafState>, payload: Json<Payload>) {
-    state.handle(payload);
+pub fn recv_answer(
+    state: &State<CloverLeafState>,
+    payload: Json<Payload>,
+) -> status::Custom<content::Json<String>> {
+    state.process_answer(payload);
+    status::Custom(
+        Status::Accepted,
+        content::Json("{{\"type\": \"msg\", \"status\": \"success\"}}".into()),
+    )
 }
 
 #[post("/candidate", data = "<payload>")]
 pub fn recv_candidate(state: &State<CloverLeafState>, payload: Json<Payload>) {
-    state.handle(payload);
+    state.add_candidate(payload);
+}
+
+#[post("/done", data = "<payload>")]
+pub fn candidates_done(state: &State<CloverLeafState>, payload: Json<Payload>) {
+    state.start(payload);
 }

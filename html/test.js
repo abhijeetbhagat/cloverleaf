@@ -21,7 +21,6 @@ let localstream;
 let peer;
 
 async function start() {
-	console.log('Requesting local stream');
 	startButton.disabled = true;
 	try {
 		const response = await fetch("http://localhost:8888/");
@@ -62,12 +61,12 @@ async function onIceCandidate(peer, e) {
 	try {
 		await peer.addIceCandidate(event.candidate);
 		console.log("candidate added");
-		const response = await fetch("http://localhost:8888/answer", {
+		const response = await fetch("http://localhost:8888/candidate", {
 		method: 'POST',
-		body: {"type": "answer", "sdp": answer},
+		body: {"type": "candidate", "candidate": event.candidate},
 		headers: {
 			"Content-Type": "application/json"
-		});
+		}});
 	} catch (e) {
 		console.log("error setting ice candidate");
 	}

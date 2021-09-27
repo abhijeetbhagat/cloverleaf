@@ -1,4 +1,3 @@
-// use glib_sys::*;
 use glib::object::ObjectExt;
 use glib::translate::ToGlibPtr;
 use glib::{signal::connect_raw, MainContext, MainLoop};
@@ -169,7 +168,9 @@ impl IceAgent {
     /// adds a remote candidate
     pub fn set_remote_candidate(&mut self, candidate: IceCandidate) {}
 
-    /// sends buf to the remote peer
+    /// sends buf to the remote peer.
+    ///
+    /// this is 'virtually' a non-blocking operation in non-reliable (UDP) mode.
     pub fn send_msg(&mut self, buf: &[u8]) -> Result<(), String> {
         unsafe {
             nice_agent_send(
