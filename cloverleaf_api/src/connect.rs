@@ -4,6 +4,7 @@ use cloverleaf_core::sdp::{create_sdp, Sdp};
 use rocket::http::Status;
 use rocket::response::{content, status};
 use rocket::serde::json::Json;
+use rocket::serde::Serialize;
 use rocket::State;
 
 #[get("/")]
@@ -17,21 +18,28 @@ pub async fn initiate(state: &State<CloverLeafState>) -> status::Custom<content:
     } else {
         status::Custom(
             Status::Accepted,
-            content::Json("{{\"type\": \"error\"}}".into()),
+            content::Json("\"type\": \"error\"".into()),
         )
     }
+}
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct CloverLeafResponse {
+    pt: String,
+    status: String,
 }
 
 #[post("/answer", data = "<payload>")]
 pub fn recv_answer(
     state: &State<CloverLeafState>,
     payload: Json<Payload>,
-) -> status::Custom<content::Json<String>> {
+) -> Json<CloverLeafResponse> {
     state.process_answer(payload);
-    status::Custom(
-        Status::Accepted,
-        content::Json("{{\"type\": \"msg\", \"status\": \"success\"}}".into()),
-    )
+    Json(CloverLeafResponse {
+        pt: "msg".into(),
+        status: "success".into(),
+    })
 }
 
 #[post("/candidate", data = "<payload>")]
