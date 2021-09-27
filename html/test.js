@@ -25,10 +25,10 @@ async function start() {
 	try {
 		const response = await fetch("http://localhost:8888/");
 		const offer = await response.json();
-		console.log(`got offer ${offer}`);
+		console.log(`got offer ${offer.sdp}`);
 		await sendAnswer(offer);
 	} catch (e) {
-		alert(`start() error: ${e.name}`);
+		console.error(e);
 	}
 }
 
@@ -38,6 +38,8 @@ async function sendAnswer(offer) {
 	peer.addEventListener("iceconnectionstatechange", e => onIceStateChange(peer, e));
 	peer.addEventListener("track", gotRemoteStream);
 
+	// even though the offer JSON object has user-defined fields along with the remote sdp,
+	// setRemoteDescription will correctly extract the sdp
 	await peer.setRemoteDescription(offer);
 
 	const answer = await peer.createAnswer();
@@ -46,7 +48,7 @@ async function sendAnswer(offer) {
 
 	const response = await fetch("http://localhost:8888/answer", {
 		method: 'POST',
-		body: {"type": "answer", "sdp": JSON.stringify(answer)},
+		body: JSON.stringify({"pt": "Answer", "payload": JSON.stringify(answer), "id": "", "session": offer.session }),
 		headers: {
 			"Content-Type": "application/json"
 		}
