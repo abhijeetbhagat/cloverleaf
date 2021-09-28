@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate rocket;
-use cloverleaf_api::connect::{initiate, recv_answer};
+use cloverleaf_api::connect::{initiate, recv_answer, recv_candidate};
 use cloverleaf_api::state::CloverLeafState;
 
 #[launch]
@@ -11,6 +11,6 @@ fn entry() -> _ {
 
     rocket::build()
         .manage(state)
-        .mount("/", routes![initiate, recv_answer])
+        .mount("/", routes![initiate, recv_answer, recv_candidate])
         .attach(cors)
 }

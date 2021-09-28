@@ -43,8 +43,15 @@ pub fn recv_answer(
 }
 
 #[post("/candidate", data = "<payload>")]
-pub fn recv_candidate(state: &State<CloverLeafState>, payload: Json<Payload>) {
+pub fn recv_candidate(
+    state: &State<CloverLeafState>,
+    payload: Json<Payload>,
+) -> Json<CloverLeafResponse> {
     state.add_candidate(payload);
+    Json(CloverLeafResponse {
+        pt: "msg".into(),
+        status: "success".into(),
+    })
 }
 
 #[post("/done", data = "<payload>")]

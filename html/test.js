@@ -65,17 +65,21 @@ async function gotRemoteStream(e) {
 
 async function onIceCandidate(peer, event) {
     try {
-	await peer.addIceCandidate(event.candidate);
-	console.log(`candidate added: ${event.candidate}`);
-	const response = await fetch("http://localhost:8888/candidate", {
-	    method: 'POST',
-	    body: JSON.stringify({ "pt": "Candidate", "payload": event.candidate, "id": "", "session": session }),
-	    headers: {
-		"Content-Type": "application/json"
-	    }});
+	if(event.candidate) {
+	    // await peer.addIceCandidate(event.candidate);
+	    const response = await fetch("http://localhost:8888/candidate", {
+		method: 'POST',
+		body: JSON.stringify({ "pt": "Candidate", "payload": JSON.stringify(event.candidate), "id": "", "session": session }),
+		headers: {
+		    "Content-Type": "application/json"
+		}});
 
-	const apiResponse = await response.json();
-	console.log(`api response is ${apiResponse}`);
+	    const apiResponse = await response.json();
+	    console.log(`api response is ${apiResponse}`);
+	} else {
+	    // TODO abhi: we are done with candidates
+	    console.log('we are done gathering candidates');
+	}
     } catch (e) {
 	console.log("error setting ice candidate");
     }
