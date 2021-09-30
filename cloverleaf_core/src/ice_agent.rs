@@ -16,6 +16,7 @@ pub struct IceAgent {
     inner: NonNull<NiceAgent>,
     stream_id: u32,
     component_id: u32,
+    candidates: Vec<IceCandidate>,
 }
 
 unsafe impl Send for IceAgent {}
@@ -119,8 +120,8 @@ impl IceAgent {
             main_ctx,
             inner: agent,
             stream_id,
-            // 1 is rtp, 2 is rtcp
-            component_id: 1,
+            component_id: 1, // 1 is rtp, 2 is rtcp
+            candidates: vec![],
         })
     }
 
@@ -166,7 +167,21 @@ impl IceAgent {
     }
 
     /// adds a remote candidate
-    pub fn set_remote_candidate(&mut self, candidate: IceCandidate) {}
+    pub fn add_remote_candidate(&mut self, candidate: IceCandidate) {
+        self.candidates.push(candidate);
+    }
+
+    /// sets the remote candidates for the agent
+    pub fn done(&self) {
+        unsafe {
+            let list: *mut GSList = std::ptr::null_mut();
+            for candidate in &self.candidates {
+                g_slist_append(list, candidate.get_ptr() as *mut _);
+            }
+
+            nice_agent_set_remote_candidates(self.inner.as_ptr(), self.stream_id, 1, list);
+        }
+    }
 
     /// sends buf to the remote peer.
     ///

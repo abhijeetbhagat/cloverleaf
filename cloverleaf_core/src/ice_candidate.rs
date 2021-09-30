@@ -1,5 +1,7 @@
+use libc;
 use libnice_sys::{
-    nice_candidate_free, nice_candidate_new, NiceCandidate,
+    nice_address_set_from_string, nice_address_set_port, nice_candidate_free, nice_candidate_new,
+    NiceCandidate, NiceCandidateTransport_NICE_CANDIDATE_TRANSPORT_UDP,
     NiceCandidateType_NICE_CANDIDATE_TYPE_HOST,
     NiceCandidateType_NICE_CANDIDATE_TYPE_SERVER_REFLEXIVE,
 };
@@ -11,7 +13,7 @@ use crate::{candidate_type::CandidateType, transport::Transport};
 pub struct IceCandidate {
     inner: NonNull<NiceCandidate>,
     pub foundation: u8,
-    pub component: u8,
+    pub component: u32,
     pub transport: Transport,
     pub priority: u32,
     pub ip: String,
@@ -22,7 +24,7 @@ pub struct IceCandidate {
 impl IceCandidate {
     pub fn new(
         foundation: u8,
-        component: u8,
+        component: u32,
         transport: Transport,
         priority: u32,
         ip: String,
@@ -31,20 +33,34 @@ impl IceCandidate {
     ) -> Result<Self, String> {
         let inner;
         unsafe {
-            match &typ {
+            let candidate_type = match &typ {
                 CandidateType::HostTcp(_) | CandidateType::HostUdp => {
-                    inner = NonNull::new(nice_candidate_new(
-                        NiceCandidateType_NICE_CANDIDATE_TYPE_HOST,
-                    ))
-                    .ok_or::<String>("candidate creation failed".into())?
+                    NiceCandidateType_NICE_CANDIDATE_TYPE_HOST
                 }
                 CandidateType::ServerReflexive(_, _) => {
-                    inner = NonNull::new(nice_candidate_new(
-                        NiceCandidateType_NICE_CANDIDATE_TYPE_SERVER_REFLEXIVE,
-                    ))
-                    .ok_or::<String>("candidate creation failed".into())?
+                    NiceCandidateType_NICE_CANDIDATE_TYPE_SERVER_REFLEXIVE
                 }
+            };
+            inner = NonNull::new(nice_candidate_new(candidate_type))
+                .ok_or::<String>("candidate creation failed".into())?;
+            (*inner.as_ptr()).component_id = component;
+            (*inner.as_ptr()).transport = NiceCandidateTransport_NICE_CANDIDATE_TRANSPORT_UDP;
+
+            // g_strlcpy(c->foundation, rfoundation, NICE_CANDIDATE_MAX_FOUNDATION);
+            libc::strcpy(
+                (*inner.as_ptr()).foundation.as_mut_ptr(),
+                foundation.to_string().as_ptr() as *const _,
+            );
+            (*inner.as_ptr()).priority = priority;
+
+            let added = nice_address_set_from_string(
+                std::ptr::addr_of_mut!((*inner.as_ptr()).addr),
+                ip.as_ptr() as *const _,
+            );
+            if added != 1 {
+                // nice_candidate_free(c);
             }
+            nice_address_set_port(std::ptr::addr_of_mut!((*inner.as_ptr()).addr), port as u32);
         }
 
         Ok(Self {
@@ -57,6 +73,16 @@ impl IceCandidate {
             port,
             typ,
         })
+    }
+
+    pub fn set_stream_id(&self, stream_id: u32) {
+        unsafe {
+            (*self.inner.as_ptr()).stream_id = stream_id;
+        }
+    }
+
+    pub fn get_ptr(&self) -> *mut NiceCandidate {
+        self.inner.as_ptr()
     }
 }
 

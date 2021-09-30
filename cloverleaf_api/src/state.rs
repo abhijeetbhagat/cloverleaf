@@ -70,7 +70,7 @@ impl CloverLeafState {
         if let Ok(candidate) = parse_candidate(&payload.payload) {
             let mut streams = self.temp_streams.write().unwrap();
             if let Some(agent) = streams.get_mut(&payload.session) {
-                agent.set_remote_candidate(candidate);
+                agent.add_remote_candidate(candidate);
             }
         }
     }
