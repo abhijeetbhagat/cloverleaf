@@ -54,7 +54,7 @@ pub fn recv_candidate(
     })
 }
 
-#[post("/done", data = "<payload>")]
-pub fn candidates_done(state: &State<CloverLeafState>, payload: Json<Payload>) {
+#[post("/watch", data = "<payload>")]
+pub fn watch(state: &State<CloverLeafState>, payload: Json<Payload>) {
     state.start(payload);
 }
