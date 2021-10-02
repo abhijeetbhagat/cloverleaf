@@ -5,7 +5,7 @@ use libnice_sys::{
     NiceCandidateType_NICE_CANDIDATE_TYPE_HOST,
     NiceCandidateType_NICE_CANDIDATE_TYPE_SERVER_REFLEXIVE,
 };
-use std::ptr::NonNull;
+use std::{ffi::CString, ptr::NonNull};
 
 use crate::{candidate_type::CandidateType, transport::Transport};
 
@@ -53,13 +53,16 @@ impl IceCandidate {
             );
             (*inner.as_ptr()).priority = priority;
 
+            let c_ip = CString::new(ip.clone()).unwrap();
             let added = nice_address_set_from_string(
                 std::ptr::addr_of_mut!((*inner.as_ptr()).addr),
-                ip.as_ptr() as *const _,
+                c_ip.as_c_str().as_ptr(),
             );
+            println!("c ip is {:?}", c_ip);
             if added != 1 {
                 // nice_candidate_free(c);
             }
+            println!("port is {}", port);
             nice_address_set_port(std::ptr::addr_of_mut!((*inner.as_ptr()).addr), port as u32);
         }
 
