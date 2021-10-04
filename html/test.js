@@ -77,8 +77,16 @@ async function onIceCandidate(peer, event) {
 	    const apiResponse = await response.json();
 	    console.log(`api response is ${apiResponse}`);
 	} else {
-	    // TODO abhi: we are done with candidates
 	    console.log('we are done gathering candidates');
+	    const response = await fetch("http://localhost:8888/watch", {
+		method: 'POST',
+		body: JSON.stringify({ "pt": "Candidate", "payload": JSON.stringify(event.candidate), "id": "", "session": session }),
+		headers: {
+		    "Content-Type": "application/json"
+		}});
+
+	    const apiResponse = await response.json();
+	    console.log(`api response is ${apiResponse}`);
 	}
     } catch (e) {
 	console.log("error setting ice candidate");
