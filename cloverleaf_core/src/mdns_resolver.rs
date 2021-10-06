@@ -1,29 +1,33 @@
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 
 use libc::c_char;
 use libnice_sys::{
-    g_inet_address_to_string, g_resolver_get_default, g_resolver_lookup_by_name_async,
-    g_resolver_lookup_by_name_finish, gchar, gpointer, strcpy, GAsyncResult, GError, GInetAddress,
-    GObject,
+    g_inet_address_to_string, g_resolver_get_default, g_resolver_lookup_by_name,
+    g_resolver_lookup_by_name_async, g_resolver_lookup_by_name_finish,
+    g_resolver_lookup_by_name_with_flags, gchar, gpointer, strcpy, GAsyncResult, GError,
+    GInetAddress, GObject, GResolverNameLookupFlags,
+    GResolverNameLookupFlags_G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
 };
 
-pub fn mdns_resolver(addr: &str) -> Result<String, String> {
+pub fn mdns_resolver(mdns_local_addr: &str) -> Result<String, String> {
     unsafe {
         let resolver = g_resolver_get_default();
         let result: *mut c_char = std::ptr::null_mut();
-        let addr = CString::new(addr);
-        g_resolver_lookup_by_name_async(
+        let addr = CString::new(mdns_local_addr);
+        let mut error: *mut GError = std::ptr::null_mut();
+        let list = g_resolver_lookup_by_name_with_flags(
             resolver,
             addr.unwrap().as_ptr(),
+            GResolverNameLookupFlags_G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
             std::ptr::null_mut(),
-            Some(callback),
-            result as gpointer,
+            std::ptr::addr_of_mut!(error),
         );
-        if result.is_null() {
+        let resolved = g_inet_address_to_string((*list).data as *mut GInetAddress);
+        if resolved.is_null() {
             println!("result is null");
             Err("there was an error resolving mdns address".into())
         } else {
-            Ok(CString::from_raw(result as *mut _).into_string().unwrap())
+            Ok(CStr::from_ptr(resolved).to_str().unwrap().to_owned())
         }
     }
 }
