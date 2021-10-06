@@ -1,12 +1,13 @@
 use std::ffi::{CStr, CString};
 
 use libnice_sys::{
-    g_inet_address_to_string, g_resolver_get_default, g_resolver_lookup_by_name_finish,
-    g_resolver_lookup_by_name_with_flags, gchar, gpointer, strcpy, GAsyncResult, GError,
-    GInetAddress, GObject, GResolverNameLookupFlags_G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
+    g_inet_address_to_string, g_object_unref, g_resolver_free_addresses, g_resolver_get_default,
+    g_resolver_lookup_by_name_finish, g_resolver_lookup_by_name_with_flags, gchar, gpointer,
+    strcpy, GAsyncResult, GError, GInetAddress, GObject,
+    GResolverNameLookupFlags_G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
 };
 
-pub fn mdns_resolver(mdns_local_addr: &str) -> Result<String, String> {
+pub fn mdns_resolve(mdns_local_addr: &str) -> Result<String, String> {
     unsafe {
         let resolver = g_resolver_get_default();
         let addr = CString::new(mdns_local_addr);
@@ -18,13 +19,16 @@ pub fn mdns_resolver(mdns_local_addr: &str) -> Result<String, String> {
             std::ptr::null_mut(),
             std::ptr::addr_of_mut!(error),
         );
-        let resolved = g_inet_address_to_string((*list).data as *mut GInetAddress);
-        if resolved.is_null() {
-            println!("result is null");
-            Err("there was an error resolving mdns address".into())
-        } else {
-            Ok(CStr::from_ptr(resolved).to_str().unwrap().to_owned())
+        if !list.is_null() {
+            let resolved = g_inet_address_to_string((*list).data as *mut GInetAddress);
+            g_resolver_free_addresses(list);
+            g_object_unref(resolver as *mut _);
+            if !resolved.is_null() {
+                return Ok(CStr::from_ptr(resolved).to_str().unwrap().to_owned());
+            }
         }
+
+        Err("there was an error resolving mdns address".into())
     }
 }
 
