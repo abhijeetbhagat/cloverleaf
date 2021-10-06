@@ -1,18 +1,14 @@
 use std::ffi::{CStr, CString};
 
-use libc::c_char;
 use libnice_sys::{
-    g_inet_address_to_string, g_resolver_get_default, g_resolver_lookup_by_name,
-    g_resolver_lookup_by_name_async, g_resolver_lookup_by_name_finish,
+    g_inet_address_to_string, g_resolver_get_default, g_resolver_lookup_by_name_finish,
     g_resolver_lookup_by_name_with_flags, gchar, gpointer, strcpy, GAsyncResult, GError,
-    GInetAddress, GObject, GResolverNameLookupFlags,
-    GResolverNameLookupFlags_G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
+    GInetAddress, GObject, GResolverNameLookupFlags_G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
 };
 
 pub fn mdns_resolver(mdns_local_addr: &str) -> Result<String, String> {
     unsafe {
         let resolver = g_resolver_get_default();
-        let result: *mut c_char = std::ptr::null_mut();
         let addr = CString::new(mdns_local_addr);
         let mut error: *mut GError = std::ptr::null_mut();
         let list = g_resolver_lookup_by_name_with_flags(
@@ -33,8 +29,8 @@ pub fn mdns_resolver(mdns_local_addr: &str) -> Result<String, String> {
 }
 
 // static void janus_sdp_mdns_resolved(GObject *source_object, GAsyncResult *res, gpointer user_data) {
-unsafe extern "C" fn callback(
-    source_object: *mut GObject,
+unsafe extern "C" fn _callback(
+    _source_object: *mut GObject,
     res: *mut GAsyncResult,
     user_data: gpointer,
 ) {
