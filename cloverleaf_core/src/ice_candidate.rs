@@ -7,7 +7,7 @@ use libnice_sys::{
 };
 use std::{ffi::CString, ptr::NonNull};
 
-use crate::{candidate_type::CandidateType, transport::Transport};
+use crate::{candidate_type::CandidateType, mdns_resolve, transport::Transport};
 
 #[derive(Debug)]
 pub struct IceCandidate {
@@ -53,17 +53,19 @@ impl IceCandidate {
             );
             (*inner.as_ptr()).priority = priority;
 
-            let c_ip = CString::new(ip.clone()).unwrap();
-            let added = nice_address_set_from_string(
-                std::ptr::addr_of_mut!((*inner.as_ptr()).addr),
-                c_ip.as_c_str().as_ptr(),
-            );
-            println!("c ip is {:?}", c_ip);
-            if added != 1 {
-                // nice_candidate_free(c);
+            if let Ok(resolved_ip) = mdns_resolve(&ip) {
+                let c_ip = CString::new(resolved_ip.clone()).unwrap();
+                let added = nice_address_set_from_string(
+                    std::ptr::addr_of_mut!((*inner.as_ptr()).addr),
+                    c_ip.as_c_str().as_ptr(),
+                );
+                if added != 1 {
+                    // nice_candidate_free(c);
+                }
+                nice_address_set_port(std::ptr::addr_of_mut!((*inner.as_ptr()).addr), port as u32);
+            } else {
+                return Err("there was a problem resolving the candidate addr".into());
             }
-            println!("port is {}", port);
-            nice_address_set_port(std::ptr::addr_of_mut!((*inner.as_ptr()).addr), port as u32);
         }
 
         Ok(Self {
