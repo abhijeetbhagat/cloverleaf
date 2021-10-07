@@ -32,7 +32,6 @@ pub fn mdns_resolve(mdns_local_addr: &str) -> Result<String, String> {
     }
 }
 
-// static void janus_sdp_mdns_resolved(GObject *source_object, GAsyncResult *res, gpointer user_data) {
 unsafe extern "C" fn _callback(
     _source_object: *mut GObject,
     res: *mut GAsyncResult,
