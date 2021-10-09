@@ -14,7 +14,9 @@ impl Streamer {
     }
 
     pub async fn run(self) {
-        let mut source = RTSPSource::new("rtsp://localhost:8554/test1").unwrap();
+        let mut source =
+            RTSPSource::new("rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov")
+                .unwrap();
         let tx = Arc::clone(&self.tx);
         loop {
             let packet = source.get_packet();
