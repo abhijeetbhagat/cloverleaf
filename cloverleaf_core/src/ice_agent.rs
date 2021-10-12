@@ -102,9 +102,9 @@ impl IceAgent {
             stream_id = nice_agent_add_stream(agent.as_ptr(), 1);
             let result = nice_agent_gather_candidates(agent.as_ptr(), stream_id);
             if result != 0 {
-                println!("candidates gathering succeeded");
+                println!("host candidate allocated");
             } else {
-                return Err("couldnt gather candidates".into());
+                return Err("either invalid stream id or couldnt allocate host candidate".into());
             }
             nice_agent_attach_recv(
                 agent.as_ptr(),
@@ -234,7 +234,7 @@ unsafe extern "C" fn new_selected_pair(
     remote: *mut NiceCandidate,
     ice: gpointer,
 ) {
-    todo!()
+    println!("new-selected-pair cb called");
 }
 
 unsafe extern "C" fn component_state_changed(
@@ -252,5 +252,5 @@ unsafe extern "C" fn new_remote_candidate(
     remote: *mut NiceCandidate,
     ice: gpointer,
 ) {
-    todo!()
+    println!("new remote candidate cb called");
 }
