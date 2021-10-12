@@ -46,6 +46,10 @@ impl RTSPSource {
 
     pub fn get_packet(&mut self) -> Option<RTPPacket> {
         let packet = self.conn.read_server_stream();
-        packet
+        if let Ok(packet) = packet {
+            packet
+        } else {
+            None
+        }
     }
 }
