@@ -50,6 +50,18 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
     //
     // int res = sscanf(candidate, "%32s %30u %3s %30u %49s %30u typ %5s %*s %39s %*s %30u",
     // let re = Regex::new(r"candidate:([0-9]+)\s([0-9]+)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s(raddr|tcptype)\s([a-z]+|[0-9\.]+)\s(rport)\s([0-9]+)").unwrap();
+
+    /*
+    candidate:
+    0 -> foundation
+    1 -> component
+    UDP -> transport
+    2122187007 -> priority
+    9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local -> ip
+    48155 -> port
+    typ -> typ
+    host -> candidate type
+    */
     let re = Regex::new(r"candidate:([0-9]+)\s([0-9]+)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s*(raddr|tcptype)*\s*([a-z]+|[0-9\.]+)*\s*(rport)*\s*([0-9]+)*").unwrap();
     if let Some(caps) = re.captures(line) {
         let foundation = caps
