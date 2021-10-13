@@ -67,6 +67,7 @@ async function onIceCandidate(peer, event) {
     try {
 	if(event.candidate) {
 	    // await peer.addIceCandidate(event.candidate);
+	    console.log(`sending candidate: ${JSON.stringify(event.candidate)}`);
 	    const response = await fetch("http://localhost:8888/candidate", {
 		method: 'POST',
 		body: JSON.stringify({ "pt": "Candidate", "payload": JSON.stringify(event.candidate), "id": "", "session": session }),
@@ -80,7 +81,7 @@ async function onIceCandidate(peer, event) {
 	    console.log('we are done gathering candidates');
 	    const response = await fetch("http://localhost:8888/watch", {
 		method: 'POST',
-		body: JSON.stringify({ "pt": "Candidate", "payload": JSON.stringify(event.candidate), "id": "", "session": session }),
+		body: JSON.stringify({ "pt": "Candidate", "payload": "", "id": "", "session": session }),
 		headers: {
 		    "Content-Type": "application/json"
 		}});
