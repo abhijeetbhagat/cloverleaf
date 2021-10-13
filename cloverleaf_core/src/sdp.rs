@@ -90,7 +90,7 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
         };
 
         IceCandidate::new(
-            foundation.as_str().parse().unwrap(),
+            foundation.as_str().into(),
             component.as_str().parse().unwrap(),
             transport.as_str().into(),
             priority.as_str().parse().unwrap(),
