@@ -12,7 +12,7 @@ use crate::{candidate_type::CandidateType, mdns_resolve, transport::Transport};
 #[derive(Debug)]
 pub struct IceCandidate {
     inner: NonNull<NiceCandidate>,
-    pub foundation: u8,
+    pub foundation: String,
     pub component: u32,
     pub transport: Transport,
     pub priority: u32,
@@ -23,7 +23,7 @@ pub struct IceCandidate {
 
 impl IceCandidate {
     pub fn new(
-        foundation: u8,
+        foundation: String,
         component: u32,
         transport: Transport,
         priority: u32,
@@ -49,7 +49,7 @@ impl IceCandidate {
             // g_strlcpy(c->foundation, rfoundation, NICE_CANDIDATE_MAX_FOUNDATION);
             libc::strcpy(
                 (*inner.as_ptr()).foundation.as_mut_ptr(),
-                foundation.to_string().as_ptr() as *const _,
+                foundation.as_ptr() as *const _,
             );
             (*inner.as_ptr()).priority = priority;
 
