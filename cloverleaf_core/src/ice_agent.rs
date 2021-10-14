@@ -9,6 +9,8 @@ use std::ptr::NonNull;
 use std::{ptr, thread};
 
 use crate::ice_candidate::IceCandidate;
+use crate::transport::Transport;
+use crate::CandidateType;
 
 /// an ICE agent
 pub struct IceAgent {
@@ -92,6 +94,14 @@ impl IceAgent {
                 )),
                 std::ptr::null_mut(),
             );
+            connect_raw::<gpointer>(
+                agent.as_ptr() as *mut _,
+                b"new-candidate-full\0".as_ptr() as *const _,
+                Some(std::mem::transmute::<_, unsafe extern "C" fn()>(
+                    new_local_candidate as *const (),
+                )),
+                std::ptr::null_mut(),
+            );
             let ret = nice_agent_add_local_address(agent.as_ptr(), addr);
             if ret != 0 {
                 println!("added local addr to agent");
@@ -123,6 +133,45 @@ impl IceAgent {
             component_id: 1, // 1 is rtp, 2 is rtcp
             candidates: vec![],
         })
+    }
+
+    /// gets local candidates
+    pub fn get_local_candidates(&self) -> Result<Vec<IceCandidate>, String> {
+        unsafe {
+            let lcands = nice_agent_get_local_candidates(
+                self.inner.as_ptr(),
+                self.stream_id,
+                self.component_id,
+            );
+            let mut ptr = lcands;
+            let mut candidates = vec![];
+            while !ptr.is_null() {
+                let candidate: *mut NiceCandidate = (*ptr).data as *mut _;
+                let addr: *mut c_char = g_malloc0(NICE_ADDRESS_STRING_LEN as u64) as *mut _;
+                nice_address_to_string(ptr::addr_of!((*candidate).addr), addr);
+                let port = nice_address_get_port(ptr::addr_of!((*candidate).addr));
+                if (*candidate).type_ == NiceCandidateType_NICE_CANDIDATE_TYPE_HOST {
+                    if (*candidate).transport == NiceCandidateTransport_NICE_CANDIDATE_TRANSPORT_UDP
+                    {
+                        let c_str = CStr::from_ptr((*candidate).foundation.as_ptr() as *mut _);
+                        candidates.push(
+                            IceCandidate::new(
+                                c_str.to_owned().into_string().unwrap(),
+                                self.component_id,
+                                Transport::Udp,
+                                (*candidate).priority,
+                                CString::from_raw(addr).into_string().unwrap(),
+                                port as u16,
+                                CandidateType::HostUdp,
+                            )
+                            .unwrap(),
+                        );
+                    }
+                }
+                ptr = (*ptr).next;
+            }
+            Ok(candidates)
+        }
     }
 
     /// gets local creds to be sent in the offer sdp
@@ -253,4 +302,14 @@ unsafe extern "C" fn new_remote_candidate(
     ice: gpointer,
 ) {
     println!("new remote candidate cb called");
+}
+
+unsafe extern "C" fn new_local_candidate(
+    agent: *mut NiceAgent,
+    remote: *mut NiceCandidate,
+    ice: gpointer,
+) {
+    // this will be useful for full trickle
+    // call nice_agent_get_local_candidates here
+    println!("new local candidate callback called");
 }
