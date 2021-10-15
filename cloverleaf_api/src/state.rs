@@ -105,56 +105,6 @@ impl CloverLeafState {
         }
     }
 
-    pub fn handle(&self, payload: Json<Payload>) {
-        match &payload.pt {
-            PayloadType::Offer => {}
-            PayloadType::Answer => {
-                println!("we recvd an answer: {}", payload.payload);
-                let sdp = Sdp::from(payload.payload.as_str());
-                let streams = self.streams.write().unwrap();
-                /*
-                    .self
-                    .agent
-                    .read()
-                    .unwrap()
-                    .set_remote_credentials(&sdp.ufrag, &sdp.pwd)
-                    .unwrap();
-                */
-            }
-            PayloadType::Candidate => {
-                if let Ok(candidate) = parse_candidate(&payload.payload) {
-                    // self.agent.write().unwrap().set_remote_candidate(candidate);
-                }
-            }
-            PayloadType::Watch => {
-                // TODO abhi: initiate streaming from the source like rtsp
-
-                let id = &payload.payload;
-                let streams = self.streams.clone();
-                let mut streams = streams.write().unwrap();
-                let (tx, rx) = broadcast::channel(10);
-                let tx = Arc::new(RwLock::new(tx));
-                let ht_tx = tx.clone();
-                let rx = if let Some(sender) = streams.get_mut(id) {
-                    let sender = sender.clone();
-                    let rx = sender.read().unwrap().subscribe();
-                    rx
-                } else {
-                    streams.insert(id.into(), ht_tx);
-                    rx
-                };
-                let main_ctx = MainContext::new();
-                if let Ok(agent) = IceAgent::new(main_ctx) {
-                    let viewer = Viewer::new(agent, rx);
-                    tokio::spawn(viewer.listen_rtp_packets());
-
-                    let source = Streamer::new(tx.clone());
-                    tokio::spawn(source.run());
-                }
-            }
-        }
-    }
-
     pub fn get_credentials(&self) -> Result<(String, String), String> {
         // self.agent.read().unwrap().get_local_credentials()
         todo!()
