@@ -103,7 +103,7 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
     }
 }
 
-pub fn create_sdp(sdp: &Sdp) -> String {
+pub fn create_sdp(sdp: &Sdp, candidate: &IceCandidate) -> String {
     format!(concat!("v=0\\r\\n",
         "o=- 1625733337583270 1 IN IP4 192.168.1.2\\r\\n",
         "s=Mountpoint 99\\r\\n",
@@ -138,7 +138,7 @@ pub fn create_sdp(sdp: &Sdp) -> String {
         "a=ssrc:180905187 msid:cloverleaf cloverleafv0\\r\\n",
         "a=ssrc:180905187 mslabel:cloverleaf\\r\\n",
         "a=ssrc:180905187 label:cloverleafv0\\r\\n",
-        "a=candidate:1 1 udp 2015363327 192.168.1.2 42933 typ host\\r\\n",
+        "a={}\\r\\n",
         "a=end-of-candidates\\r\\n",
-        ), sdp.ufrag, sdp.pwd)
+        ), sdp.ufrag, sdp.pwd, candidate)
 }
