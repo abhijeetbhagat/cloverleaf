@@ -46,10 +46,12 @@ impl CloverLeafState {
         if let Ok(agent) = IceAgent::new(main_ctx) {
             let (ufrag, pwd) = agent.get_local_credentials().unwrap();
             let sdp = Sdp { ufrag, pwd };
-            let sdp = create_sdp(&sdp);
+            if let Ok(lcands) = agent.get_local_candidates() {
+                let sdp = create_sdp(&sdp, &lcands[0]);
 
-            streams.insert(uuid.to_string(), agent);
-            return Ok((uuid.to_string(), sdp));
+                streams.insert(uuid.to_string(), agent);
+                return Ok((uuid.to_string(), sdp));
+            }
         }
         Err("there was an error".into())
     }
