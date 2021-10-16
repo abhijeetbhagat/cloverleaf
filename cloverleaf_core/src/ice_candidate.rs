@@ -5,7 +5,7 @@ use libnice_sys::{
     NiceCandidateType_NICE_CANDIDATE_TYPE_HOST,
     NiceCandidateType_NICE_CANDIDATE_TYPE_SERVER_REFLEXIVE,
 };
-use std::{ffi::CString, ptr::NonNull};
+use std::{ffi::CString, fmt::Display, ptr::NonNull};
 
 use crate::{candidate_type::CandidateType, mdns_resolve, transport::Transport};
 
@@ -96,5 +96,17 @@ impl Drop for IceCandidate {
         unsafe {
             nice_candidate_free(self.inner.as_ptr() as *mut _);
         }
+    }
+}
+
+impl Display for IceCandidate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // TODO abhi: handle other types of candidates here as well
+        // candidate:0 1 UDP 2122187007 9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local 48155 typ host
+        write!(
+            f,
+            "candidate:{} {} {} {} {} {} typ host",
+            self.foundation, self.component, self.transport, self.priority, self.ip, self.port,
+        )
     }
 }
