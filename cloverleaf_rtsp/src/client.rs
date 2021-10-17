@@ -28,21 +28,12 @@ impl RTSPSource {
     }
     */
 
-    /// starts reading RTP packets from the network in an infinite loop
-    /// and passes them to the attached callback
-    /*
+    /// performs an rtsp handshake
     pub fn start(&mut self, media_type: MediaType) {
-        self.conn.describe();
-        self.conn.setup(media_type);
-        self.conn.play();
-        loop {
-            let packet = self.conn.read_server_stream();
-            if let Some(packet) = packet {
-                (self.callback)(packet);
-            }
-        }
+        self.conn.describe().unwrap();
+        self.conn.setup(media_type).unwrap();
+        self.conn.play().unwrap();
     }
-    */
 
     pub fn get_packet(&mut self) -> Option<RTPPacket> {
         let packet = self.conn.read_server_stream();
