@@ -1,4 +1,5 @@
 mod candidate_type;
+mod encryptor;
 mod ice_agent;
 mod ice_candidate;
 mod mdns_resolver;
