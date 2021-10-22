@@ -60,6 +60,7 @@ async function sendAnswer(offer) {
 }
 
 async function gotRemoteStream(e) {
+    console.log("got remote stream");
     remoteVideo.srcObject = e.streams[0];
 }
 

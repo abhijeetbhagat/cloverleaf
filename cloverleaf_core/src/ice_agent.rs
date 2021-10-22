@@ -237,13 +237,16 @@ impl IceAgent {
     /// this is 'virtually' a non-blocking operation in non-reliable (UDP) mode.
     pub fn send_msg(&mut self, buf: &[u8]) -> Result<(), String> {
         unsafe {
-            nice_agent_send(
+            let ret = nice_agent_send(
                 self.inner.as_ptr(),
                 self.stream_id,
                 self.component_id,
                 buf.len() as u32,
                 buf.as_ptr() as *const _,
             );
+            if ret < 0 {
+                return Err("there was a problem sending the packet to the browser".into());
+            }
         }
         Ok(())
     }

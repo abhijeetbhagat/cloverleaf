@@ -11,7 +11,9 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, RwLock};
 use tokio::sync::broadcast;
+use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::broadcast::Sender;
+use tokio::sync::mpsc;
 use tokio::sync::RwLock as TRwLock;
 use uuid::Uuid;
 
@@ -81,29 +83,59 @@ impl CloverLeafState {
     pub fn start(&self, payload: Json<Payload>) {
         let id = &payload.id;
         let session = &payload.session;
-        let mut streams = self.temp_streams.write().unwrap();
+
+        let (tx, mut rx) = mpsc::channel(1000);
 
         // spawn streaming if not running already
         if !*self.active.read().unwrap() {
-            let source = Streamer::new(self.tx.clone());
+            // let source = Streamer::new(self.tx.clone());
+            let source = Streamer::new(tx);
             tokio::task::spawn(source.run());
             let mut active = self.active.write().unwrap();
             *active = true;
         }
 
+        let mut streams = self.temp_streams.write().unwrap();
         // remove session from the temp streams hashmap and transfer the ownership
         // of the ice agent to the spawned task
         if streams.contains_key(session) {
             let (_, mut agent) = streams.remove_entry(session).unwrap();
-            let tx = self.tx.read().unwrap();
-            let mut rx = tx.subscribe();
+            // let tx = self.tx.read().unwrap();
+            // let mut rx = tx.subscribe();
             tokio::task::spawn(async move {
                 loop {
-                    if let Ok(packet) = rx.recv().await {
-                        agent.send_msg(&Vec::<u8>::from(packet));
+                    println!("waiting for packet from tx");
+                    /*
+                    match rx.recv().await {
+                        Ok(mut packet) => {
+                            // TODO abhi: this ssrc is from the hardcoded sdp we are returning.
+                            // fix this to be a random value.
+                            packet.ssrc = 1811295701;
+                            println!("sending packet to rtc agent");
+                            agent.send_msg(&Vec::<u8>::from(packet));
+                        }
+                        Err(RecvError::Closed) => {
+                            println!("rx: no sender for this channel");
+                        }
+                        Err(_) => {
+                            println!("rx: lagged");
+                        }
+                    }
+                    */
+                    match rx.recv().await {
+                        Some(mut packet) => {
+                            packet.ssrc = 1811295701;
+                            println!("sending packet to rtc agent");
+                            if let Err(s) = agent.send_msg(&Vec::<u8>::from(packet)) {
+                                println!("error: {}", s);
+                            }
+                        }
+                        _ => println!("rx: None"),
                     }
                 }
             });
+        } else {
+            println!("session not found");
         }
     }
 

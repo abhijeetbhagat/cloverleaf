@@ -3,14 +3,17 @@ use cloverleaf_rtsp::MediaType;
 use cloverleaf_rtsp::RTPPacket;
 use std::sync::Arc;
 use std::sync::RwLock;
-use tokio::sync::broadcast::Sender;
+// use tokio::sync::broadcast::Sender;
+use tokio::sync::mpsc::Sender;
 
 pub struct Streamer {
-    tx: Arc<RwLock<Sender<RTPPacket>>>,
+    // tx: Arc<RwLock<Sender<RTPPacket>>>,
+    tx: Sender<RTPPacket>,
 }
 
 impl Streamer {
-    pub fn new(tx: Arc<RwLock<Sender<RTPPacket>>>) -> Self {
+    // pub fn new(tx: Arc<RwLock<Sender<RTPPacket>>>) -> Self {
+    pub fn new(tx: Sender<RTPPacket>) -> Self {
         Streamer { tx }
     }
 
@@ -18,16 +21,22 @@ impl Streamer {
         let mut source =
             RTSPSource::new("rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov")
                 .unwrap();
-        let tx = Arc::clone(&self.tx);
+        // let tx = Arc::clone(&self.tx);
         source.start(MediaType::Video);
         loop {
             let packet = source.get_packet();
             match packet {
                 Some(packet) => {
-                    let tx = tx.read().unwrap();
+                    // let tx = self.tx.read().unwrap();
                     // broadcast to viewers
                     println!("recvd packet. broadcasting ...");
-                    tx.send(packet).unwrap();
+                    /*
+                    match tx.send(packet) {
+                        Ok(n) => println!("sent to {} recvrs", n),
+                        _ => println!("there was an error sending data to the recvrs"),
+                    }
+                    */
+                    self.tx.send(packet).await;
                 }
                 _ => {
                     println!("did not recv packet. trying again.")
