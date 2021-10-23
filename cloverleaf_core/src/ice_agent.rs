@@ -1,9 +1,12 @@
+use glib::ffi::{g_free, g_malloc0, g_slist_append, gpointer, GSList};
 use glib::object::ObjectExt;
 use glib::translate::ToGlibPtr;
 use glib::{signal::connect_raw, MainContext, MainLoop};
+use glib_sys::GMainContext;
 use gobject_sys::g_object_set;
-use libc::c_char;
-use libnice_sys::*;
+use libc::{c_char, c_uint};
+// use libnice_sys::*;
+use libnice::sys::*;
 use std::ffi::{CStr, CString};
 use std::ptr::NonNull;
 use std::{ptr, thread};
@@ -11,7 +14,7 @@ use std::{ptr, thread};
 use crate::ice_candidate::IceCandidate;
 use crate::transport::Transport;
 use crate::CandidateType;
-
+const INET6_ADDRSTRLEN: usize = 46;
 /// an ICE agent
 pub struct IceAgent {
     main_ctx: MainContext,
@@ -44,7 +47,7 @@ impl IceAgent {
             thread::spawn(move || main_loop.run());
 
             agent = NonNull::new(nice_agent_new(
-                main_ctx.to_glib_full() as *mut _GMainContext,
+                main_ctx.to_glib_full() as *mut GMainContext,
                 NiceCompatibility_NICE_COMPATIBILITY_RFC5245,
             ))
             .ok_or::<String>("agent creation failed".into())?;
@@ -120,7 +123,7 @@ impl IceAgent {
                 agent.as_ptr(),
                 stream_id,
                 1,
-                main_ctx.to_glib_full() as *mut _GMainContext,
+                main_ctx.to_glib_full() as *mut GMainContext,
                 Some(recvr),
                 ptr::null_mut(),
             );
@@ -147,7 +150,7 @@ impl IceAgent {
             let mut candidates = vec![];
             while !ptr.is_null() {
                 let candidate: *mut NiceCandidate = (*ptr).data as *mut _;
-                let addr: *mut c_char = g_malloc0(NICE_ADDRESS_STRING_LEN as u64) as *mut _;
+                let addr: *mut c_char = g_malloc0(INET6_ADDRSTRLEN) as *mut _;
                 nice_address_to_string(ptr::addr_of!((*candidate).addr), addr);
                 let port = nice_address_get_port(ptr::addr_of!((*candidate).addr));
                 if (*candidate).type_ == NiceCandidateType_NICE_CANDIDATE_TYPE_HOST {
@@ -177,8 +180,8 @@ impl IceAgent {
     /// gets local creds to be sent in the offer sdp
     pub fn get_local_credentials(&self) -> Result<(String, String), String> {
         unsafe {
-            let mut ufrag: *mut gchar = ptr::null_mut();
-            let mut pwd: *mut gchar = ptr::null_mut();
+            let mut ufrag: *mut c_char = ptr::null_mut();
+            let mut pwd: *mut c_char = ptr::null_mut();
             nice_agent_get_local_credentials(
                 self.inner.as_ptr(),
                 self.stream_id,
@@ -228,7 +231,12 @@ impl IceAgent {
                 g_slist_append(list, candidate.get_ptr() as *mut _);
             }
 
-            nice_agent_set_remote_candidates(self.inner.as_ptr(), self.stream_id, 1, list);
+            nice_agent_set_remote_candidates(
+                self.inner.as_ptr(),
+                self.stream_id,
+                1,
+                list as *const _,
+            );
         }
     }
 
@@ -262,17 +270,17 @@ impl Drop for IceAgent {
 
 unsafe extern "C" fn recvr(
     agent: *mut NiceAgent,
-    stream_id: guint,
-    component_id: guint,
-    len: guint,
-    buf: *mut gchar,
+    stream_id: c_uint,
+    component_id: c_uint,
+    len: c_uint,
+    buf: *mut c_char,
     user_data: gpointer,
 ) {
 }
 
 unsafe extern "C" fn candidate_gathering_done(
     agent: *mut NiceAgent,
-    stream_id: guint,
+    stream_id: c_uint,
     ice: gpointer,
 ) {
     println!("candidate gathering done callback called");
@@ -280,8 +288,8 @@ unsafe extern "C" fn candidate_gathering_done(
 
 unsafe extern "C" fn new_selected_pair(
     agent: *mut NiceAgent,
-    stream_id: guint,
-    component_id: guint,
+    stream_id: c_uint,
+    component_id: c_uint,
     local: *mut NiceCandidate,
     remote: *mut NiceCandidate,
     ice: gpointer,
@@ -291,9 +299,9 @@ unsafe extern "C" fn new_selected_pair(
 
 unsafe extern "C" fn component_state_changed(
     agent: *mut NiceAgent,
-    stream_id: guint,
-    component_id: guint,
-    state: guint,
+    stream_id: c_uint,
+    component_id: c_uint,
+    state: c_uint,
     ice: gpointer,
 ) {
     println!("component stated changed callback called");

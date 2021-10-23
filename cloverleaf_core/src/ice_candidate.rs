@@ -1,5 +1,5 @@
 use libc;
-use libnice_sys::{
+use libnice::sys::{
     nice_address_set_from_string, nice_address_set_port, nice_candidate_free, nice_candidate_new,
     NiceCandidate, NiceCandidateTransport_NICE_CANDIDATE_TRANSPORT_UDP,
     NiceCandidateType_NICE_CANDIDATE_TYPE_HOST,

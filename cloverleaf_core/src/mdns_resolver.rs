@@ -1,11 +1,16 @@
 use std::ffi::{CStr, CString};
 
-use libnice_sys::{
-    g_inet_address_to_string, g_object_unref, g_resolver_free_addresses, g_resolver_get_default,
-    g_resolver_lookup_by_name_finish, g_resolver_lookup_by_name_with_flags, gchar, gpointer,
-    strcpy, GAsyncResult, GError, GInetAddress, GObject,
-    GResolverNameLookupFlags_G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
+use gio_sys::{
+    g_inet_address_to_string, g_resolver_free_addresses, g_resolver_get_default,
+    g_resolver_lookup_by_name_finish, g_resolver_lookup_by_name_with_flags, GAsyncResult,
+    GInetAddress, G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
 };
+use glib::char;
+use glib::ffi::{g_malloc0, gpointer, GError};
+
+use gobject_sys::{g_object_unref, GObject};
+use libc::{strcpy, strlen};
+// use libnice::sys::GResolverNameLookupFlags_G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY;
 
 pub fn mdns_resolve(mdns_local_addr: &str) -> Result<String, String> {
     unsafe {
@@ -15,7 +20,7 @@ pub fn mdns_resolve(mdns_local_addr: &str) -> Result<String, String> {
         let list = g_resolver_lookup_by_name_with_flags(
             resolver,
             addr.unwrap().as_ptr(),
-            GResolverNameLookupFlags_G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
+            G_RESOLVER_NAME_LOOKUP_FLAGS_IPV4_ONLY,
             std::ptr::null_mut(),
             std::ptr::addr_of_mut!(error),
         );
@@ -41,7 +46,7 @@ unsafe extern "C" fn _callback(
     let mut error: *mut GError = std::ptr::null_mut();
     let list = g_resolver_lookup_by_name_finish(resolver, res, std::ptr::addr_of_mut!(error));
     let resolved = g_inet_address_to_string((*list).data as *mut GInetAddress);
-    let mut user_data: *mut gchar = user_data as *mut _;
-    user_data = libnice_sys::g_malloc0(libnice_sys::strlen(resolved) + 1) as *mut _;
+    let mut user_data: *mut char = user_data as *mut _;
+    user_data = g_malloc0(strlen(resolved) + 1) as *mut _;
     strcpy(user_data as *mut _, resolved);
 }
