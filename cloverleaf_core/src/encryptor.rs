@@ -2,6 +2,7 @@ use openssl::hash::MessageDigest;
 use openssl::pkey::PKey;
 use openssl::ssl::{SslContextBuilder, SslMethod, SslVerifyMode};
 use openssl::x509::X509;
+use srtp2_sys::*;
 
 pub struct Encryptor {}
 
@@ -30,6 +31,9 @@ impl Encryptor {
                     ctx_builder.set_cipher_list(
                         "DEFAULT:!NULL:!aNULL:!SHA256:!SHA384:!aECDH:!AESGCM+AES256:!aPSK",
                     );
+                    unsafe {
+                        srtp_init();
+                    }
                 }
             }
             _ => {}
