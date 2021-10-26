@@ -33,6 +33,8 @@ impl Encryptor {
                     );
                     unsafe {
                         srtp_init();
+                        let policy: *mut srtp_policy_t = std::ptr::null_mut();
+                        srtp_crypto_policy_set_rtp_default(std::ptr::addr_of_mut!((*policy).rtp));
                     }
                 }
             }
