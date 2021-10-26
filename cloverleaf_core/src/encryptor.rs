@@ -1,3 +1,5 @@
+use std::mem::MaybeUninit;
+
 use openssl::hash::MessageDigest;
 use openssl::pkey::PKey;
 use openssl::ssl::{SslContextBuilder, SslMethod, SslVerifyMode};
@@ -33,8 +35,11 @@ impl Encryptor {
                     );
                     unsafe {
                         srtp_init();
-                        let policy: *mut srtp_policy_t = std::ptr::null_mut();
-                        srtp_crypto_policy_set_rtp_default(std::ptr::addr_of_mut!((*policy).rtp));
+                        // let policy: *mut srtp_policy_t = std::ptr::null_mut();
+                        let mut policy: MaybeUninit<srtp_policy_t> = MaybeUninit::uninit();
+                        srtp_crypto_policy_set_rtp_default(std::ptr::addr_of_mut!(
+                            (*policy.as_mut_ptr()).rtp
+                        ));
                     }
                 }
             }
