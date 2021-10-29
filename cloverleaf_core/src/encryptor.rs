@@ -40,6 +40,7 @@ impl Encryptor {
                         srtp_crypto_policy_set_rtp_default(std::ptr::addr_of_mut!(
                             (*policy.as_mut_ptr()).rtp
                         ));
+                        (*policy.as_mut_ptr()).ssrc.type_ = 2;
                     }
                 }
             }
