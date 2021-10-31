@@ -6,7 +6,9 @@ use openssl::ssl::{SslContextBuilder, SslMethod, SslVerifyMode};
 use openssl::x509::X509;
 use srtp2_sys::*;
 
-pub struct Encryptor {}
+pub struct Encryptor {
+    session: srtp_t,
+}
 
 impl Encryptor {
     pub fn new(cert_path: &str, key_path: &str) -> Result<Encryptor, String> {
@@ -41,6 +43,11 @@ impl Encryptor {
                             (*policy.as_mut_ptr()).rtp
                         ));
                         (*policy.as_mut_ptr()).ssrc.type_ = 2;
+                        // TODO base 64 encode this and read it from a config file
+                        (*policy.as_mut_ptr()).key = b"mysecretkey".as_ptr() as *mut _;
+                        (*policy.as_mut_ptr()).next = std::ptr::null_mut();
+                        let mut ctx: MaybeUninit<srtp_t> = MaybeUninit::uninit();
+                        srtp_create(ctx.as_mut_ptr(), policy.as_ptr());
                     }
                 }
             }
