@@ -9,18 +9,17 @@ use tokio::sync::mpsc::Sender;
 pub struct Streamer {
     // tx: Arc<RwLock<Sender<RTPPacket>>>,
     tx: Sender<RTPPacket>,
+    url: String,
 }
 
 impl Streamer {
     // pub fn new(tx: Arc<RwLock<Sender<RTPPacket>>>) -> Self {
-    pub fn new(tx: Sender<RTPPacket>) -> Self {
-        Streamer { tx }
+    pub fn new(tx: Sender<RTPPacket>, url: String) -> Self {
+        Streamer { tx, url }
     }
 
     pub async fn run(self) {
-        let mut source =
-            RTSPSource::new("rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov")
-                .unwrap();
+        let mut source = RTSPSource::new(self.url).unwrap();
         // let tx = Arc::clone(&self.tx);
         source.start(MediaType::Video);
         loop {
