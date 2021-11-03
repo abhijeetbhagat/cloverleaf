@@ -56,4 +56,16 @@ impl Encryptor {
 
         todo!()
     }
+
+    /// encrypts the buf
+    pub fn encrypt(&self, buf: &mut [u8]) {
+        unsafe {
+            let mut len = buf.len();
+            srtp_protect(
+                self.session,
+                buf.as_mut_ptr() as *mut _,
+                std::ptr::addr_of_mut!(len) as *mut _,
+            );
+        }
+    }
 }
