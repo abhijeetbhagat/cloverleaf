@@ -1,3 +1,4 @@
+use cloverleaf_rtsp::RTPPacket;
 use glib::ffi::{g_free, g_malloc0, g_slist_append, gpointer, GSList};
 use glib::object::ObjectExt;
 use glib::translate::ToGlibPtr;
@@ -243,13 +244,14 @@ impl IceAgent {
     /// sends buf to the remote peer.
     ///
     /// this is 'virtually' a non-blocking operation in non-reliable (UDP) mode.
-    pub fn send_msg(&mut self, buf: &[u8]) -> Result<(), String> {
+    pub fn send_msg(&mut self, packet: &RTPPacket) -> Result<(), String> {
+        let buf = Vec::<u8>::from(packet);
         unsafe {
             let ret = nice_agent_send(
                 self.inner.as_ptr(),
                 self.stream_id,
                 self.component_id,
-                buf.len() as u32,
+                packet.payload.len() as u32,
                 buf.as_ptr() as *const _,
             );
             if ret < 0 {
