@@ -1,5 +1,6 @@
 use crate::payload::{Payload, PayloadType};
 use cloverleaf_core::sdp::create_sdp;
+use cloverleaf_core::Encryptor;
 use cloverleaf_core::{
     sdp::{parse_candidate, Sdp},
     IceAgent, Streamer, Viewer,
@@ -22,19 +23,23 @@ pub struct CloverLeafState {
     streams: Arc<RwLock<HashMap<String, Arc<RwLock<Sender<RTPPacket>>>>>>,
     tx: Arc<RwLock<Sender<RTPPacket>>>,
     active: Arc<RwLock<bool>>,
+    cert_path: String,
+    key_path: String,
 }
 
 unsafe impl Send for CloverLeafState {}
 unsafe impl Sync for CloverLeafState {}
 
 impl CloverLeafState {
-    pub fn new() -> Result<CloverLeafState, String> {
+    pub fn new(cert: &str, key: &str) -> Result<CloverLeafState, String> {
         let (tx, _) = broadcast::channel(20);
         Ok(Self {
             temp_streams: Arc::new(RwLock::new(HashMap::new())),
             streams: Arc::new(RwLock::new(HashMap::new())),
             tx: Arc::new(RwLock::new(tx)),
             active: Arc::new(RwLock::new(false)),
+            cert_path: cert.into(),
+            key_path: key.into(),
         })
     }
 
@@ -79,7 +84,7 @@ impl CloverLeafState {
         }
     }
 
-    /// starts the requested stream
+    /// starts the requested stream in the 'payload' field of payload
     pub fn start(&self, payload: Json<Payload>) {
         let id = &payload.id;
         let session = &payload.session;
@@ -89,7 +94,7 @@ impl CloverLeafState {
         // spawn streaming if not running already
         if !*self.active.read().unwrap() {
             // let source = Streamer::new(self.tx.clone());
-            let source = Streamer::new(tx);
+            let source = Streamer::new(tx, payload.payload);
             tokio::task::spawn(source.run());
             let mut active = self.active.write().unwrap();
             *active = true;
@@ -100,6 +105,7 @@ impl CloverLeafState {
         // of the ice agent to the spawned task
         if streams.contains_key(session) {
             let (_, mut agent) = streams.remove_entry(session).unwrap();
+            let encryptor = Encryptor::new(self.cert, self.key).unwrap();
             // let tx = self.tx.read().unwrap();
             // let mut rx = tx.subscribe();
             tokio::task::spawn(async move {
@@ -126,7 +132,8 @@ impl CloverLeafState {
                         Some(mut packet) => {
                             packet.ssrc = 1811295701;
                             println!("sending packet to rtc agent");
-                            if let Err(s) = agent.send_msg(&Vec::<u8>::from(packet)) {
+                            encryptor.encrypt(&mut packet.payload);
+                            if let Err(s) = agent.send_msg(&packet) {
                                 println!("error: {}", s);
                             }
                         }
