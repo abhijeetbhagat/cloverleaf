@@ -251,7 +251,7 @@ impl IceAgent {
                 self.inner.as_ptr(),
                 self.stream_id,
                 self.component_id,
-                packet.payload.len() as u32,
+                buf.len() as u32,
                 buf.as_ptr() as *const _,
             );
             if ret < 0 {
