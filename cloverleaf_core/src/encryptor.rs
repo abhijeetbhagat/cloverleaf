@@ -8,7 +8,10 @@ use srtp2_sys::*;
 
 pub struct Encryptor {
     session: srtp_t,
+    fingerprint: String,
 }
+
+unsafe impl Send for Encryptor {}
 
 impl Encryptor {
     pub fn new(cert_path: &str, key_path: &str) -> Result<Encryptor, String> {
@@ -48,6 +51,10 @@ impl Encryptor {
                         (*policy.as_mut_ptr()).next = std::ptr::null_mut();
                         let mut ctx: MaybeUninit<srtp_t> = MaybeUninit::uninit();
                         srtp_create(ctx.as_mut_ptr(), policy.as_ptr());
+                        return Ok(Encryptor {
+                            session: *(ctx.as_mut_ptr()),
+                            fingerprint: "sha-256".into(),
+                        });
                     }
                 }
             }
@@ -67,5 +74,10 @@ impl Encryptor {
                 std::ptr::addr_of_mut!(len) as *mut _,
             );
         }
+    }
+
+    /// returns the fingerprint
+    pub fn get_fingerprint(&self) -> String {
+        self.fingerprint.clone()
     }
 }
