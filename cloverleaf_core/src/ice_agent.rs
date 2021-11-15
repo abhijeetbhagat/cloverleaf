@@ -14,7 +14,7 @@ use std::{ptr, thread};
 
 use crate::ice_candidate::IceCandidate;
 use crate::transport::Transport;
-use crate::CandidateType;
+use crate::{CandidateType, Encryptor};
 const INET6_ADDRSTRLEN: usize = 46;
 /// an ICE agent
 pub struct IceAgent {
@@ -23,6 +23,7 @@ pub struct IceAgent {
     stream_id: u32,
     component_id: u32,
     candidates: Vec<IceCandidate>,
+    encryptor: Encryptor,
 }
 
 unsafe impl Send for IceAgent {}
@@ -30,7 +31,7 @@ unsafe impl Sync for IceAgent {}
 
 impl IceAgent {
     /// creates a new `IceAgent` with the given `MainContext`
-    pub fn new(main_ctx: MainContext) -> Result<Self, String> {
+    pub fn new(main_ctx: MainContext, cert_path: &str, key_path: &str) -> Result<Self, String> {
         let agent;
         let stream_id;
 
@@ -136,6 +137,7 @@ impl IceAgent {
             stream_id,
             component_id: 1, // 1 is rtp, 2 is rtcp
             candidates: vec![],
+            encryptor: Encryptor::new(cert_path, key_path)?,
         })
     }
 
@@ -244,8 +246,9 @@ impl IceAgent {
     /// sends buf to the remote peer.
     ///
     /// this is 'virtually' a non-blocking operation in non-reliable (UDP) mode.
-    pub fn send_msg(&mut self, packet: &RTPPacket) -> Result<(), String> {
-        let buf = Vec::<u8>::from(packet);
+    pub fn send_msg(&mut self, packet: &mut RTPPacket) -> Result<(), String> {
+        self.encryptor.encrypt(&mut packet.payload);
+        let buf = Vec::<u8>::from(&*packet);
         unsafe {
             let ret = nice_agent_send(
                 self.inner.as_ptr(),
@@ -259,6 +262,10 @@ impl IceAgent {
             }
         }
         Ok(())
+    }
+
+    pub fn get_fingerprint(&self) -> String {
+        self.encryptor.get_fingerprint()
     }
 }
 
