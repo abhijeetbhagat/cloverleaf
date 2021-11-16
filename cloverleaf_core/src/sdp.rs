@@ -103,7 +103,7 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
     }
 }
 
-pub fn create_sdp(sdp: &Sdp, candidate: &IceCandidate) -> String {
+pub fn create_sdp(sdp: &Sdp, candidate: &IceCandidate, fingerprint: &str) -> String {
     format!(
         concat!(
             "v=0\\r\\n",
@@ -112,8 +112,7 @@ pub fn create_sdp(sdp: &Sdp, candidate: &IceCandidate) -> String {
             "t=0 0\\r\\n",
             "a=group:BUNDLE video\\r\\n",
             "a=msid-semantic: WMS cloverleaf\\r\\n",
-            // "m=video 9 UDP/TLS/RTP/SAVPF 96 97\\r\\n",
-            "m=video 9 RTP/AVPF 96 97\\r\\n",
+            "m=video 9 UDP/TLS/RTP/SAVPF 96 97\\r\\n",
             "c=IN IP4 192.168.1.2\\r\\n",
             "a=sendonly\\r\\n",
             "a=mid:video\\r\\n",
@@ -122,6 +121,7 @@ pub fn create_sdp(sdp: &Sdp, candidate: &IceCandidate) -> String {
             "a=ice-pwd:{}\\r\\n",
             "a=ice-options:trickle\\r\\n",
             // "a=fingerprint:sha-256 5B:F5:FC:7E:5F:1B:21:86:37:A4:06:EF:48:A1:E0:E5:DB:93:5F:4F:05:B3:89:9A:11:E5:1E:15:81:D7:11:13\\r\\n",
+            "a=fingerprint:{}\\r\\n",
             "a=setup:actpass\\r\\n",
             "a=rtpmap:96 H264/90000\\r\\n",
             "a=fmtp:96 profile-level-id=42e01f;packetization-mode=1\\r\\n",
@@ -144,6 +144,6 @@ pub fn create_sdp(sdp: &Sdp, candidate: &IceCandidate) -> String {
             "a={}\\r\\n",
             "a=end-of-candidates\\r\\n",
         ),
-        sdp.ufrag, sdp.pwd, candidate
+        sdp.ufrag, sdp.pwd, candidate, fingerprint
     )
 }
