@@ -50,11 +50,11 @@ impl CloverLeafState {
         let streams = self.temp_streams.clone();
         let mut streams = streams.write().unwrap();
         let main_ctx = MainContext::new();
-        if let Ok(agent) = IceAgent::new(main_ctx) {
+        if let Ok(agent) = IceAgent::new(main_ctx, &self.cert_path, &self.key_path) {
             let (ufrag, pwd) = agent.get_local_credentials().unwrap();
             let sdp = Sdp { ufrag, pwd };
             if let Ok(lcands) = agent.get_local_candidates() {
-                let sdp = create_sdp(&sdp, &lcands[0]);
+                let sdp = create_sdp(&sdp, &lcands[0], &agent.get_fingerprint());
 
                 streams.insert(uuid.to_string(), agent);
                 return Ok((uuid.to_string(), sdp));
@@ -94,7 +94,7 @@ impl CloverLeafState {
         // spawn streaming if not running already
         if !*self.active.read().unwrap() {
             // let source = Streamer::new(self.tx.clone());
-            let source = Streamer::new(tx, payload.payload);
+            let source = Streamer::new(tx, payload.payload.clone());
             tokio::task::spawn(source.run());
             let mut active = self.active.write().unwrap();
             *active = true;
@@ -105,7 +105,7 @@ impl CloverLeafState {
         // of the ice agent to the spawned task
         if streams.contains_key(session) {
             let (_, mut agent) = streams.remove_entry(session).unwrap();
-            let encryptor = Encryptor::new(self.cert, self.key).unwrap();
+            // let encryptor = Encryptor::new(&self.cert_path, &self.key_path).unwrap();
             // let tx = self.tx.read().unwrap();
             // let mut rx = tx.subscribe();
             tokio::task::spawn(async move {
@@ -132,8 +132,7 @@ impl CloverLeafState {
                         Some(mut packet) => {
                             packet.ssrc = 1811295701;
                             println!("sending packet to rtc agent");
-                            encryptor.encrypt(&mut packet.payload);
-                            if let Err(s) = agent.send_msg(&packet) {
+                            if let Err(s) = agent.send_msg(&mut packet) {
                                 println!("error: {}", s);
                             }
                         }
