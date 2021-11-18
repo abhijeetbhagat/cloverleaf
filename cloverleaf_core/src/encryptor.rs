@@ -6,6 +6,7 @@ use openssl::ssl::{SslContextBuilder, SslMethod, SslVerifyMode};
 use openssl::x509::X509;
 use srtp2_sys::*;
 
+/// Represents an SRTP context, stores the fingerprint and encrypts data
 pub struct Encryptor {
     session: srtp_t,
     fingerprint: String,
@@ -14,6 +15,7 @@ pub struct Encryptor {
 unsafe impl Send for Encryptor {}
 
 impl Encryptor {
+    /// creates an internal SRTP context with the given cert and key paths
     pub fn new(cert_path: &str, key_path: &str) -> Result<Encryptor, String> {
         let method = SslMethod::dtls();
         let mut ctx_builder = SslContextBuilder::new(method)
@@ -34,10 +36,18 @@ impl Encryptor {
                 ctx_builder.set_private_key(&key);
                 if let Ok(_) = ctx_builder.check_private_key() {
                     ctx_builder.set_read_ahead(true);
-                    let digest_bytes = cert.digest(MessageDigest::sha256());
+                    let digest_bytes = cert.digest(MessageDigest::sha256()).unwrap();
+                    let mut fingerprint: String = "sha-256 ".into();
+                    for byte in &*digest_bytes {
+                        fingerprint.push_str(&format!("{:02X}:", byte));
+                    }
+                    // remove the last ':'
+                    fingerprint.pop();
+
                     ctx_builder.set_cipher_list(
                         "DEFAULT:!NULL:!aNULL:!SHA256:!SHA384:!aECDH:!AESGCM+AES256:!aPSK",
                     );
+
                     unsafe {
                         srtp_init();
                         // let policy: *mut srtp_policy_t = std::ptr::null_mut();
@@ -53,7 +63,7 @@ impl Encryptor {
                         srtp_create(ctx.as_mut_ptr(), policy.as_ptr());
                         return Ok(Encryptor {
                             session: *(ctx.as_mut_ptr()),
-                            fingerprint: "sha-256".into(),
+                            fingerprint,
                         });
                     }
                 }
