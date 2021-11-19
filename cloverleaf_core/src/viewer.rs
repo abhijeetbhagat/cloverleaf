@@ -14,8 +14,8 @@ impl Viewer {
 
     pub async fn listen_rtp_packets(mut self) {
         loop {
-            let packet = self.rx.recv().await.unwrap();
-            if let Ok(_) = self.ice_agent.send_msg(&packet) {}
+            let mut packet = self.rx.recv().await.unwrap();
+            if let Ok(_) = self.ice_agent.send_msg(&mut packet) {}
         }
     }
 }
