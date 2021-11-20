@@ -9,6 +9,7 @@ mod transport;
 mod viewer;
 
 pub use candidate_type::CandidateType;
+pub use encryptor::Encryptor;
 pub use ice_agent::IceAgent;
 pub use ice_candidate::IceCandidate;
 pub use mdns_resolver::mdns_resolve;
