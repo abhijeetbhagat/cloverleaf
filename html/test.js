@@ -82,7 +82,7 @@ async function onIceCandidate(peer, event) {
 	    console.log('we are done gathering candidates');
 	    const response = await fetch("http://localhost:8888/watch", {
 		method: 'POST',
-		body: JSON.stringify({ "pt": "Candidate", "payload": "", "id": "", "session": session }),
+		body: JSON.stringify({ "pt": "Candidate", "payload": "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov", "id": "", "session": session }),
 		headers: {
 		    "Content-Type": "application/json"
 		}});
