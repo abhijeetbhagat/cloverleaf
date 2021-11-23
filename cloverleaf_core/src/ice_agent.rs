@@ -1,10 +1,8 @@
 use cloverleaf_rtsp::RTPPacket;
 use glib::ffi::{g_free, g_malloc0, g_slist_append, gpointer, GSList};
-use glib::object::ObjectExt;
 use glib::translate::ToGlibPtr;
 use glib::{signal::connect_raw, MainContext, MainLoop};
 use glib_sys::GMainContext;
-use gobject_sys::g_object_set;
 use libc::{c_char, c_uint};
 // use libnice_sys::*;
 use libnice::sys::*;
