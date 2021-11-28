@@ -15,7 +15,6 @@ use tokio::sync::broadcast;
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc;
-use tokio::sync::RwLock as TRwLock;
 use uuid::Uuid;
 
 pub struct CloverLeafState {
