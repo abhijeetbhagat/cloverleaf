@@ -144,6 +144,6 @@ pub fn create_sdp(sdp: &Sdp, candidate: &IceCandidate, fingerprint: &str) -> Str
             "a={}\\r\\n",
             "a=end-of-candidates\\r\\n",
         ),
-        sdp.ufrag, sdp.pwd, candidate, fingerprint
+        sdp.ufrag, sdp.pwd, fingerprint, candidate
     )
 }

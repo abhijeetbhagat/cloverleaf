@@ -71,7 +71,7 @@ impl Encryptor {
             _ => {}
         }
 
-        todo!()
+        Err("can't create encryptor".into())
     }
 
     /// encrypts the buf

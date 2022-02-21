@@ -55,9 +55,11 @@ impl CloverLeafState {
 
                 streams.insert(uuid.to_string(), agent);
                 return Ok((uuid.to_string(), sdp));
+            } else {
+                return Err("error getting local cands".into());
             }
         }
-        Err("there was an error".into())
+        Err("error creating ice agent".into())
     }
 
     /// extracts info from the answer

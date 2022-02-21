@@ -9,17 +9,18 @@ use rocket::State;
 
 #[get("/")]
 pub async fn initiate(state: &State<CloverLeafState>) -> status::Custom<content::Json<String>> {
-    if let Ok((session, sdp)) = state.create_session() {
-        let offer = format!(
-            "{{\"type\": \"offer\", \"session\": \"{}\", \"sdp\": \"{}\"}}",
-            session, sdp
-        );
-        return status::Custom(Status::Accepted, content::Json(offer));
-    } else {
-        status::Custom(
+    match state.create_session() {
+        Ok((session, sdp)) => {
+            let offer = format!(
+                "{{\"type\": \"offer\", \"session\": \"{}\", \"sdp\": \"{}\"}}",
+                session, sdp
+            );
+            return status::Custom(Status::Accepted, content::Json(offer));
+        }
+        Err(e) => status::Custom(
             Status::Accepted,
-            content::Json("\"type\": \"error\"".into()),
-        )
+            content::Json(format!("{{\"type\": \"{}\"}}", e)),
+        ),
     }
 }
 
