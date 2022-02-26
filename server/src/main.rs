@@ -9,9 +9,9 @@ fn entry() -> _ {
 
     let rocket = rocket::build();
     let figment = rocket.figment();
-    let cert = figment.extract_inner("cert").unwrap();
-    let key = figment.extract_inner("key").unwrap();
-    let state = CloverLeafState::new(cert, key).unwrap();
+    let cert = figment.find_value("cert").unwrap().into_string().unwrap();
+    let key = figment.find_value("key").unwrap().into_string().unwrap();
+    let state = CloverLeafState::new(&cert, &key).unwrap();
     rocket
         .manage(state)
         .mount("/", routes![initiate, recv_answer, recv_candidate, watch])
