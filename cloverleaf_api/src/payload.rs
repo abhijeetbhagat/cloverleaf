@@ -6,6 +6,7 @@ pub enum PayloadType {
     Offer,
     Answer,
     Candidate,
+    CandidatesDone,
     Watch,
 }
 
@@ -16,4 +17,10 @@ pub struct Payload {
     pub payload: String,
     pub id: String,
     pub session: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct PayloadCandidate {
+    pub candidate: String,
 }

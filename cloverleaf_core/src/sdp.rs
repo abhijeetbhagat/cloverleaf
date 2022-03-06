@@ -62,6 +62,7 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
     typ -> typ
     host -> candidate type
     */
+    println!("parsing this line: {line}");
     let re = Regex::new(r"candidate:([0-9]+)\s([0-9]+)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s*(raddr|tcptype)*\s*([a-z]+|[0-9\.]+)*\s*(rport)*\s*([0-9]+)*").unwrap();
     if let Some(caps) = re.captures(line) {
         let foundation = caps
@@ -99,6 +100,7 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
             typ,
         )
     } else {
+        println!("[parse_candidate] cannot parse candidate");
         Err("candidate cant be parsed".into())
     }
 }

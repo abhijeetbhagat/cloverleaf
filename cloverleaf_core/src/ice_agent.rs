@@ -36,7 +36,6 @@ impl IceAgent {
         unsafe {
             let addr = nice_address_new();
             let result = nice_address_set_from_string(addr, b"127.0.0.1\0".as_ptr() as *const _);
-            println!("result is {}", result);
             if result != 0 {
                 println!("we have an address set!");
             } else {
@@ -219,25 +218,37 @@ impl IceAgent {
         }
     }
 
-    /// adds a remote candidate
+    /// adds a remote candidate to a list of candidates.
+    ///
+    /// `remote_candidates_gathering_done` should then call libnice api
+    /// to pass it this list once we are done gathering the candidates.
     pub fn add_remote_candidate(&mut self, candidate: IceCandidate) {
         self.candidates.push(candidate);
     }
 
     /// sets the remote candidates for the agent
-    pub fn done(&self) {
+    pub fn remote_candidates_gathering_done(&self) {
         unsafe {
             let list: *mut GSList = std::ptr::null_mut();
             for candidate in &self.candidates {
                 g_slist_append(list, candidate.get_ptr() as *mut _);
             }
 
-            nice_agent_set_remote_candidates(
+            println!(
+                "setting remote candidates list with len {}",
+                self.candidates.len(),
+            );
+            if nice_agent_set_remote_candidates(
                 self.inner.as_ptr(),
                 self.stream_id,
                 1,
                 list as *const _,
-            );
+            ) < 0
+            {
+                println!("there was an error setting remote candidates");
+            } else {
+                println!("remote candidates setting successful");
+            }
         }
     }
 
@@ -245,7 +256,7 @@ impl IceAgent {
     ///
     /// this is 'virtually' a non-blocking operation in non-reliable (UDP) mode.
     pub fn send_msg(&mut self, packet: &mut RTPPacket) -> Result<(), String> {
-        self.encryptor.encrypt(&mut packet.payload);
+        // self.encryptor.encrypt(&mut packet.payload);
         let buf = Vec::<u8>::from(&*packet);
         unsafe {
             let ret = nice_agent_send(
@@ -283,6 +294,7 @@ unsafe extern "C" fn recvr(
     buf: *mut c_char,
     user_data: gpointer,
 ) {
+    println!("nice_agent_attach_recv called");
 }
 
 unsafe extern "C" fn candidate_gathering_done(
@@ -301,6 +313,7 @@ unsafe extern "C" fn new_selected_pair(
     remote: *mut NiceCandidate,
     ice: gpointer,
 ) {
+    // TODO abhi - initiate dtls handshake here
     println!("new-selected-pair cb called");
 }
 

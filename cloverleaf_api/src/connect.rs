@@ -55,6 +55,18 @@ pub fn recv_candidate(
     })
 }
 
+#[post("/done", data = "<payload>")]
+pub fn candidates_done(
+    state: &State<CloverLeafState>,
+    payload: Json<Payload>,
+) -> Json<CloverLeafResponse> {
+    state.candidates_done(payload);
+    Json(CloverLeafResponse {
+        pt: "msg".into(),
+        status: "success".into(),
+    })
+}
+
 #[post("/watch", data = "<payload>")]
 pub fn watch(state: &State<CloverLeafState>, payload: Json<Payload>) -> Json<CloverLeafResponse> {
     state.start(payload);

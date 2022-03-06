@@ -2,6 +2,5 @@
 address = "127.0.0.1"
 port = 8888
 
-[extra]
-cert = "/home/abhi/code/cloverleaf/localhost+3.pem"
-key = "/home/abhi/code/cloverleaf/localhost+3-key.pem"
+cert = "localhost+3.pem"
+key = "localhost+3-key.pem"

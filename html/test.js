@@ -78,18 +78,7 @@ async function onIceCandidate(peer, event) {
 
 	    const apiResponse = await response.json();
 	    console.log(`api response is ${apiResponse}`);
-	} else {
-	    console.log('we are done gathering candidates');
-	    const response = await fetch("http://localhost:8888/watch", {
-		method: 'POST',
-		body: JSON.stringify({ "pt": "Candidate", "payload": "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov", "id": "", "session": session }),
-		headers: {
-		    "Content-Type": "application/json"
-		}});
-
-	    const apiResponse = await response.json();
-	    console.log(`api response is ${apiResponse}`);
-	}
+	}     
     } catch (e) {
 	console.log("error setting ice candidate");
     }
@@ -97,4 +86,35 @@ async function onIceCandidate(peer, event) {
 
 async function onIceStateChange(peer, e) {
     console.log("ice state changed");
+    switch(peer.iceGatheringState) {
+	case "new":
+	    break;
+	case "gathering":
+	    break;
+	case "complete":
+	    console.log('we are done gathering candidates. letting the server know ...');
+	    response = await fetch("http://localhost:8888/done", {
+		method: 'POST',
+		body: JSON.stringify({ "pt": "CandidatesDone", "payload": "", "id": "", "session": session }),
+		headers: {
+		    "Content-Type": "application/json"
+		}});
+
+	    apiResponse = await response.json();
+	    console.log(`api response is ${apiResponse}`);
+
+	    console.log(`sending watch request ...`);
+	    response = await fetch("http://localhost:8888/watch", {
+		method: 'POST',
+		body: JSON.stringify({ "pt": "Candidate", "payload": "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov", "id": "", "session": session }),
+		headers: {
+		    "Content-Type": "application/json"
+		}});
+
+	    apiResponse = await response.json();
+	    console.log(`api response is ${apiResponse}`);
+	    break;
+	default:
+	    break;
+    }
 }

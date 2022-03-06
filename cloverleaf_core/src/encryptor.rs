@@ -1,5 +1,6 @@
 use std::mem::MaybeUninit;
 
+use base64::decode;
 use openssl::hash::MessageDigest;
 use openssl::pkey::PKey;
 use openssl::ssl::{SslContextBuilder, SslMethod, SslVerifyMode};
@@ -55,12 +56,21 @@ impl Encryptor {
                         srtp_crypto_policy_set_rtp_default(std::ptr::addr_of_mut!(
                             (*policy.as_mut_ptr()).rtp
                         ));
+                        srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(std::ptr::addr_of_mut!(
+                            (*policy.as_mut_ptr()).rtp
+                        ));
                         (*policy.as_mut_ptr()).ssrc.type_ = 2;
-                        // TODO base 64 encode this and read it from a config file
-                        (*policy.as_mut_ptr()).key = b"mysecretkey".as_ptr() as *mut _;
+                        let decoded = decode("WbTBosdVUZqEb6Htqhn+m3z7wUh4RJVR8nE15GbN").unwrap();
+                        (*policy.as_mut_ptr()).key = decoded.as_ptr() as *mut _; // b"mysecretkey".as_ptr() as *mut _;
                         (*policy.as_mut_ptr()).next = std::ptr::null_mut();
                         let mut ctx: MaybeUninit<srtp_t> = MaybeUninit::uninit();
-                        srtp_create(ctx.as_mut_ptr(), policy.as_ptr());
+                        let status = srtp_create(ctx.as_mut_ptr(), policy.as_ptr());
+                        /*
+                        if status != 0 {
+                            println!("error creating srtp context {}", status);
+                            return Err("can't create encryptor".into());
+                        }
+                        */
                         return Ok(Encryptor {
                             session: *(ctx.as_mut_ptr()),
                             fingerprint,

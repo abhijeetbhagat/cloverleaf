@@ -1,4 +1,4 @@
-use crate::payload::{Payload, PayloadType};
+use crate::payload::{Payload, PayloadCandidate, PayloadType};
 use cloverleaf_core::sdp::create_sdp;
 use cloverleaf_core::Encryptor;
 use cloverleaf_core::{
@@ -7,7 +7,7 @@ use cloverleaf_core::{
 };
 use cloverleaf_rtsp::RTPPacket;
 use glib::MainContext;
-use rocket::serde::json::Json;
+use rocket::serde::json::{serde_json, Json};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tokio::sync::broadcast;
@@ -75,11 +75,31 @@ impl CloverLeafState {
     /// adds a candidate to the ice agent associated with the
     /// supplied session.
     pub fn add_candidate(&self, payload: Json<Payload>) {
-        if let Ok(candidate) = parse_candidate(&payload.payload) {
-            let mut streams = self.temp_streams.write().unwrap();
-            if let Some(agent) = streams.get_mut(&payload.session) {
-                agent.add_remote_candidate(candidate);
+        // payload looks like: {"candidate":"candidate:2 1 TCP 2105458943 0a8aa0e9-d5f0-4377-b6d4-daa4495a6b6f.local 9 typ host tcptype active","sdpMid":"video","sdpMLineIndex":0,"usernameFragment":"7ff02998" }
+        if let Ok(string_candidate) = serde_json::from_str::<PayloadCandidate>(&payload.payload) {
+            match parse_candidate(&string_candidate.candidate) {
+                Ok(candidate) => {
+                    let mut streams = self.temp_streams.write().unwrap();
+                    if let Some(agent) = streams.get_mut(&payload.session) {
+                        println!("adding remote candidate to the list");
+                        agent.add_remote_candidate(candidate);
+                    }
+                }
+                Err(e) => {
+                    println!("there was an error parsing candidate: {e}");
+                }
             }
+        } else {
+            println!("there was an error parsing payload");
+        }
+    }
+
+    /// adds a candidate to the ice agent associated with the
+    /// supplied session.
+    pub fn candidates_done(&self, payload: Json<Payload>) {
+        let mut streams = self.temp_streams.write().unwrap();
+        if let Some(agent) = streams.get_mut(&payload.session) {
+            agent.remote_candidates_gathering_done();
         }
     }
 
