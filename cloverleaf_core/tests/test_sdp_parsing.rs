@@ -34,4 +34,16 @@ fn test_candidate_parsing() {
         candidate.typ,
         CandidateType::ServerReflexive("0.0.0.0".into(), "0".parse().unwrap())
     );
+
+    let text = "candidate:4077567720 1 udp 2113937151 068fdcb4-42c6-417c-b5c3-089ac79ce82d.local 43023 typ host generation 0 ufrag pfsh network-cost 999";
+    let candidate = parse_candidate(text);
+    match &candidate {
+        Ok(_) => {}
+        Err(e) => {
+            println!("{e}");
+        }
+    }
+    assert!(candidate.is_ok());
+    let candidate = candidate.unwrap();
+    assert_eq!(candidate.typ, CandidateType::HostUdp);
 }

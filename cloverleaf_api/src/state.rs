@@ -76,13 +76,26 @@ impl CloverLeafState {
     /// supplied session.
     pub fn add_candidate(&self, payload: Json<Payload>) {
         // payload looks like: {"candidate":"candidate:2 1 TCP 2105458943 0a8aa0e9-d5f0-4377-b6d4-daa4495a6b6f.local 9 typ host tcptype active","sdpMid":"video","sdpMLineIndex":0,"usernameFragment":"7ff02998" }
+        use cloverleaf_core::IceCandidate;
+
         if let Ok(string_candidate) = serde_json::from_str::<PayloadCandidate>(&payload.payload) {
             match parse_candidate(&string_candidate.candidate) {
                 Ok(candidate) => {
                     let mut streams = self.temp_streams.write().unwrap();
                     if let Some(agent) = streams.get_mut(&payload.session) {
                         println!("adding remote candidate to the list");
-                        agent.add_remote_candidate(candidate);
+                        agent.add_remote_candidate(
+                            IceCandidate::new(
+                                candidate.foundation,
+                                candidate.component,
+                                candidate.transport.into(),
+                                candidate.priority,
+                                candidate.ip.into(),
+                                candidate.port,
+                                candidate.typ,
+                            )
+                            .unwrap(),
+                        );
                     }
                 }
                 Err(e) => {

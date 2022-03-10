@@ -1,4 +1,6 @@
-use crate::{candidate_type::CandidateType, ice_candidate::IceCandidate};
+use crate::candidate_type::CandidateType;
+use crate::ice_candidate::IceCandidate;
+use crate::parsed_ice_candidate::ParsedIceCandidate;
 use regex::Regex;
 
 pub struct Sdp {
@@ -41,13 +43,13 @@ impl From<&str> for Sdp {
     }
 }
 
-pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
+pub fn parse_candidate(line: &str) -> Result<ParsedIceCandidate, String> {
     // candidate:0 1 UDP 2122187007 9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local 48155 typ host
     // candidate:2 1 UDP 2122252543 475400ac-4273-4245-90fb-7b6c97fe06f7.local 53547 typ host
     // candidate:4 1 TCP 2105458943 9971baf2-00e6-4bb3-b954-7a61b4eb8daf.local 9 typ host tcptype active
     // candidate:5 1 TCP 2105524479 475400ac-4273-4245-90fb-7b6c97fe06f7.local 9 typ host tcptype active
     // candidate:1 1 UDP 1685987327 103.208.69.28 19828 typ srflx raddr 0.0.0.0 rport 0
-    //
+    // candidate:4077567720 1 udp 2113937151 068fdcb4-42c6-417c-b5c3-089ac79ce82d.local 43023 typ host generation 0 ufrag pfsh network-cost 999
     // int res = sscanf(candidate, "%32s %30u %3s %30u %49s %30u typ %5s %*s %39s %*s %30u",
     // let re = Regex::new(r"candidate:([0-9]+)\s([0-9]+)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s(raddr|tcptype)\s([a-z]+|[0-9\.]+)\s(rport)\s([0-9]+)").unwrap();
 
@@ -62,43 +64,47 @@ pub fn parse_candidate(line: &str) -> Result<IceCandidate, String> {
     typ -> typ
     host -> candidate type
     */
-    println!("parsing this line: {line}");
-    let re = Regex::new(r"candidate:([0-9]+)\s([0-9]+)\s(UDP|TCP)\s([0-9]+)\s([a-z0-9\-\.]+)\s([0-9]+)\styp\s(host|srflx|prflx)\s*(raddr|tcptype)*\s*([a-z]+|[0-9\.]+)*\s*(rport)*\s*([0-9]+)*").unwrap();
-    if let Some(caps) = re.captures(line) {
-        let foundation = caps
-            .get(1)
-            .ok_or::<String>("can't parse foundation".into())?;
-        let component = caps
-            .get(2)
-            .ok_or::<String>("can't parse component".into())?;
-        let transport = caps
-            .get(3)
-            .ok_or::<String>("can't parse transport".into())?;
-        let priority = caps.get(4).ok_or::<String>("can't parse priority".into())?;
-        let ip = caps.get(5).ok_or::<String>("can't parse ip".into())?;
-        let port = caps.get(6).ok_or::<String>("can't parse port".into())?;
-        let typ = caps.get(7).ok_or::<String>("can't parse typ".into())?;
 
-        let typ = match typ.as_str() {
-            "host" if transport.as_str() == "UDP" => CandidateType::HostUdp,
-            "host" if transport.as_str() == "TCP" => CandidateType::HostTcp(ip.as_str().into()),
+    let v: Vec<&str> = line.split(':').collect();
+    let v: Vec<&str> = v[1].split(' ').collect();
+
+    if !v.is_empty() {
+        let foundation = v[0]
+            .parse()
+            .or::<String>(Err("can't parse foundation".into()))?;
+        let component = v[1]
+            .parse()
+            .or::<String>(Err("can't parse component".into()))?;
+        let transport = v[2];
+        let priority = v[3]
+            .parse()
+            .or::<String>(Err("can't parse priority".into()))?;
+        let ip = v[4];
+        let port = v[5].parse().or::<String>(Err("can't parse port".into()))?;
+        let typ = v[7];
+
+        let typ = match typ {
+            "host" if transport.to_lowercase() == "udp" => CandidateType::HostUdp,
+            "host" if transport.to_lowercase() == "tcp" => CandidateType::HostTcp(ip.into()),
             "srflx" => {
-                let rip = caps.get(9).ok_or::<String>("can't parse rip".into())?;
-                let rport = caps.get(11).ok_or::<String>("can't parse rport".into())?;
-                CandidateType::ServerReflexive(rip.as_str().into(), rport.as_str().parse().unwrap())
+                let rip = v[9];
+                let rport = v[11]
+                    .parse()
+                    .or::<String>(Err("can't parse rport".into()))?;
+                CandidateType::ServerReflexive(rip.into(), rport)
             }
-            _ => return Err(format!("unknown type: {}", typ.as_str())),
+            _ => return Err(format!("unknown type: {}", typ)),
         };
 
-        IceCandidate::new(
-            foundation.as_str().into(),
-            component.as_str().parse().unwrap(),
-            transport.as_str().into(),
-            priority.as_str().parse().unwrap(),
-            ip.as_str().into(),
-            port.as_str().parse().unwrap(),
+        Ok(ParsedIceCandidate {
+            foundation,
+            component,
+            transport: transport.into(),
+            priority,
+            ip: ip.into(),
+            port,
             typ,
-        )
+        })
     } else {
         println!("[parse_candidate] cannot parse candidate");
         Err("candidate cant be parsed".into())

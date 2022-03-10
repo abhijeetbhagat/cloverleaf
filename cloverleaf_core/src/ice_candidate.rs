@@ -64,7 +64,9 @@ impl IceCandidate {
                 }
                 nice_address_set_port(std::ptr::addr_of_mut!((*inner.as_ptr()).addr), port as u32);
             } else {
-                return Err("there was a problem resolving the candidate addr".into());
+                return Err(format!(
+                    "there was a problem resolving the candidate addr [{ip}]"
+                ));
             }
         }
 
