@@ -1,9 +1,9 @@
-use crate::payload::{Payload, PayloadCandidate, PayloadType};
+use crate::payload::{Payload, PayloadCandidate};
 use cloverleaf_core::sdp::create_sdp;
-use cloverleaf_core::Encryptor;
+// use cloverleaf_core::Encryptor;
 use cloverleaf_core::{
     sdp::{parse_candidate, Sdp},
-    IceAgent, Streamer, Viewer,
+    IceAgent, Streamer,
 };
 use cloverleaf_rtsp::RTPPacket;
 use glib::MainContext;
@@ -17,8 +17,8 @@ use uuid::Uuid;
 
 pub struct CloverLeafState {
     temp_streams: Arc<RwLock<HashMap<String, IceAgent>>>,
-    streams: Arc<RwLock<HashMap<String, Arc<RwLock<Sender<RTPPacket>>>>>>,
-    tx: Arc<RwLock<Sender<RTPPacket>>>,
+    _streams: Arc<RwLock<HashMap<String, Arc<RwLock<Sender<RTPPacket>>>>>>,
+    _tx: Arc<RwLock<Sender<RTPPacket>>>,
     active: Arc<RwLock<bool>>,
     cert_path: String,
     key_path: String,
@@ -32,8 +32,8 @@ impl CloverLeafState {
         let (tx, _) = broadcast::channel(20);
         Ok(Self {
             temp_streams: Arc::new(RwLock::new(HashMap::new())),
-            streams: Arc::new(RwLock::new(HashMap::new())),
-            tx: Arc::new(RwLock::new(tx)),
+            _streams: Arc::new(RwLock::new(HashMap::new())),
+            _tx: Arc::new(RwLock::new(tx)),
             active: Arc::new(RwLock::new(false)),
             cert_path: cert.into(),
             key_path: key.into(),
@@ -68,7 +68,7 @@ impl CloverLeafState {
         let sdp = Sdp::from(payload.payload.as_str());
         let mut streams = self.temp_streams.write().unwrap();
         if let Some(agent) = streams.get_mut(&payload.session) {
-            agent.set_remote_credentials(&sdp.ufrag, &sdp.pwd);
+            let _ = agent.set_remote_credentials(&sdp.ufrag, &sdp.pwd);
         }
     }
 
@@ -118,7 +118,7 @@ impl CloverLeafState {
 
     /// starts the requested stream in the 'payload' field of payload
     pub fn start(&self, payload: Json<Payload>) {
-        let id = &payload.id;
+        let _id = &payload.id;
         let session = &payload.session;
 
         let (tx, mut rx) = mpsc::channel(1000);

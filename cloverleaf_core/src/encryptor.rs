@@ -23,7 +23,7 @@ impl Encryptor {
             .map_err(|_| String::from("couldn't create an ssl context builder"))?;
         ctx_builder.set_verify_callback(
             SslVerifyMode::PEER | SslVerifyMode::FAIL_IF_NO_PEER_CERT,
-            |preverify, x509_store_ctx_ref| true,
+            |_preverify, _x509_store_ctx_ref| true,
         );
         ctx_builder
             .set_tlsext_use_srtp("SRTP_AES128_CM_SHA1_80:SRTP_AES128_CM_SHA1_32")
@@ -33,8 +33,8 @@ impl Encryptor {
             (Ok(cert), Ok(key)) => {
                 let cert = X509::from_pem(&cert).unwrap();
                 let key = PKey::private_key_from_pem(&key).unwrap();
-                ctx_builder.set_certificate(&cert);
-                ctx_builder.set_private_key(&key);
+                let _ = ctx_builder.set_certificate(&cert);
+                let _ = ctx_builder.set_private_key(&key);
                 if let Ok(_) = ctx_builder.check_private_key() {
                     ctx_builder.set_read_ahead(true);
                     let digest_bytes = cert.digest(MessageDigest::sha256()).unwrap();
@@ -45,7 +45,7 @@ impl Encryptor {
                     // remove the last ':'
                     fingerprint.pop();
 
-                    ctx_builder.set_cipher_list(
+                    let _ = ctx_builder.set_cipher_list(
                         "DEFAULT:!NULL:!aNULL:!SHA256:!SHA384:!aECDH:!AESGCM+AES256:!aPSK",
                     );
 
@@ -64,7 +64,7 @@ impl Encryptor {
                         (*policy.as_mut_ptr()).key = decoded.as_ptr() as *mut _; // b"mysecretkey".as_ptr() as *mut _;
                         (*policy.as_mut_ptr()).next = std::ptr::null_mut();
                         let mut ctx: MaybeUninit<srtp_t> = MaybeUninit::uninit();
-                        let status = srtp_create(ctx.as_mut_ptr(), policy.as_ptr());
+                        let _status = srtp_create(ctx.as_mut_ptr(), policy.as_ptr());
                         /*
                         if status != 0 {
                             println!("error creating srtp context {}", status);

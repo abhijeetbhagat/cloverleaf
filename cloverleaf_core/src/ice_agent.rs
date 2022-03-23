@@ -14,9 +14,10 @@ use crate::ice_candidate::IceCandidate;
 use crate::transport::Transport;
 use crate::{CandidateType, Encryptor};
 const INET6_ADDRSTRLEN: usize = 46;
+
 /// an ICE agent
 pub struct IceAgent {
-    main_ctx: MainContext,
+    _main_ctx: MainContext,
     inner: NonNull<NiceAgent>,
     stream_id: u32,
     component_id: u32,
@@ -129,7 +130,7 @@ impl IceAgent {
         }
 
         Ok(IceAgent {
-            main_ctx,
+            _main_ctx: main_ctx,
             inner: agent,
             stream_id,
             component_id: 1, // 1 is rtp, 2 is rtcp
@@ -287,58 +288,58 @@ impl Drop for IceAgent {
 }
 
 unsafe extern "C" fn recvr(
-    agent: *mut NiceAgent,
-    stream_id: c_uint,
-    component_id: c_uint,
-    len: c_uint,
-    buf: *mut c_char,
-    user_data: gpointer,
+    _agent: *mut NiceAgent,
+    _stream_id: c_uint,
+    _component_id: c_uint,
+    _len: c_uint,
+    _buf: *mut c_char,
+    _user_data: gpointer,
 ) {
     println!("nice_agent_attach_recv called");
 }
 
 unsafe extern "C" fn candidate_gathering_done(
-    agent: *mut NiceAgent,
-    stream_id: c_uint,
-    ice: gpointer,
+    _agent: *mut NiceAgent,
+    _stream_id: c_uint,
+    _ice: gpointer,
 ) {
     println!("candidate gathering done callback called");
 }
 
 unsafe extern "C" fn new_selected_pair(
-    agent: *mut NiceAgent,
-    stream_id: c_uint,
-    component_id: c_uint,
-    local: *mut NiceCandidate,
-    remote: *mut NiceCandidate,
-    ice: gpointer,
+    _agent: *mut NiceAgent,
+    _stream_id: c_uint,
+    _component_id: c_uint,
+    _local: *mut NiceCandidate,
+    _remote: *mut NiceCandidate,
+    _ice: gpointer,
 ) {
     // TODO abhi - initiate dtls handshake here
     println!("new-selected-pair cb called");
 }
 
 unsafe extern "C" fn component_state_changed(
-    agent: *mut NiceAgent,
-    stream_id: c_uint,
-    component_id: c_uint,
-    state: c_uint,
-    ice: gpointer,
+    _agent: *mut NiceAgent,
+    _stream_id: c_uint,
+    _component_id: c_uint,
+    _state: c_uint,
+    _ice: gpointer,
 ) {
     println!("component stated changed callback called");
 }
 
 unsafe extern "C" fn new_remote_candidate(
-    agent: *mut NiceAgent,
-    remote: *mut NiceCandidate,
-    ice: gpointer,
+    _agent: *mut NiceAgent,
+    _remote: *mut NiceCandidate,
+    _ice: gpointer,
 ) {
     println!("new remote candidate cb called");
 }
 
 unsafe extern "C" fn new_local_candidate(
-    agent: *mut NiceAgent,
-    remote: *mut NiceCandidate,
-    ice: gpointer,
+    _agent: *mut NiceAgent,
+    _remote: *mut NiceCandidate,
+    _ice: gpointer,
 ) {
     // this will be useful for full trickle
     // call nice_agent_get_local_candidates here

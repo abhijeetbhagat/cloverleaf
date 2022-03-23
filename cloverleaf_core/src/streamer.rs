@@ -1,8 +1,8 @@
 use cloverleaf_rtsp::client::RTSPSource;
 use cloverleaf_rtsp::MediaType;
 use cloverleaf_rtsp::RTPPacket;
-use std::sync::Arc;
-use std::sync::RwLock;
+// use std::sync::Arc;
+// use std::sync::RwLock;
 // use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::Sender;
 
@@ -35,7 +35,7 @@ impl Streamer {
                         _ => println!("there was an error sending data to the recvrs"),
                     }
                     */
-                    self.tx.send(packet).await;
+                    let _ = self.tx.send(packet).await;
                 }
                 _ => {
                     println!("did not recv packet. trying again.")
@@ -44,5 +44,5 @@ impl Streamer {
         }
     }
 
-    pub async fn on_packet(&self, packet: RTPPacket) {}
+    pub async fn on_packet(&self, _packet: RTPPacket) {}
 }
