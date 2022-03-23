@@ -14,6 +14,7 @@ use libc::{strcpy, strlen};
 
 pub fn mdns_resolve(mdns_local_addr: &str) -> Result<String, String> {
     unsafe {
+        println!("[mdns_resolve] resolving addr {mdns_local_addr}");
         let resolver = g_resolver_get_default();
         let addr = CString::new(mdns_local_addr);
         let mut error: *mut GError = std::ptr::null_mut();

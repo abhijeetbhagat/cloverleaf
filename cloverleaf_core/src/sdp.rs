@@ -1,7 +1,7 @@
 use crate::candidate_type::CandidateType;
 use crate::ice_candidate::IceCandidate;
 use crate::parsed_ice_candidate::ParsedIceCandidate;
-use regex::Regex;
+// use regex::Regex;
 
 pub struct Sdp {
     pub ufrag: String,
@@ -24,15 +24,11 @@ impl From<&str> for Sdp {
             if line.contains("ice-ufrag") {
                 // a=ice-pwd:99ad05513f44705637769b05c7e86c0b
                 //    a=ice-ufrag:ae11196c
-                let re = Regex::new(r"a=ice-ufrag:([a-z0-9]+)").unwrap();
-                let caps = re.captures(line).unwrap();
-                sdp.ufrag = caps.get(1).unwrap().as_str().into();
+                sdp.ufrag = line.split(':').collect::<Vec<&str>>()[1].into();
                 continue;
             }
             if line.contains("ice-pwd") {
-                let re = Regex::new(r"a=ice-pwd:([a-z0-9]+)").unwrap();
-                let caps = re.captures(line).unwrap();
-                sdp.pwd = caps.get(1).unwrap().as_str().into();
+                sdp.pwd = line.split(':').collect::<Vec<&str>>()[1].into();
                 continue;
             }
             if line.contains("candidate") {
